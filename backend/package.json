@@ -8,7 +8,9 @@
     "node:hn": "node nodes/hn/server.js",
     "node:hcm": "node nodes/hcm/server.js",
     "node:dn": "node nodes/dn/server.js",
-    "start:all": "node node_modules/concurrently/dist/bin/concurrently.js --kill-others \"npm run coordinator\" \"npm run node:hn\" \"npm run node:hcm\" \"npm run node:dn\""
+    "start:all": "node node_modules/concurrently/dist/bin/concurrently.js --kill-others \"npm run coordinator\" \"npm run node:hn\" \"npm run node:hcm\" \"npm run node:dn\"",
+    "update-report": "node ../docs/scripts/update-report.js",
+    "report:update": "node ../docs/scripts/update-report.js"
   },
   "dependencies": {
     "axios": "^1.6.0",

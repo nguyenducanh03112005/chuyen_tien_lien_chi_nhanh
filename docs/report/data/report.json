@@ -4,16 +4,42 @@
     "subtitle": "Báo cáo Kỹ thuật & Học thuật Hệ thống phân tán",
     "course": "Ứng dụng & Hệ thống phân tán (Distributed Systems)",
     "version": "1.0.0",
-    "date": "Tháng 09/2026",
-    "status": "VERIFIED"
+    "date": "21/09/2026 00:44",
+    "status": "VERIFIED",
+    "lastCommit": {
+      "hash": "9b066fa",
+      "message": "feat(docs): Complete HTML web report for distributed systems study",
+      "branch": "main",
+      "date": "2026-09-21 00:37:23 +0700"
+    }
   },
   "overview": {
     "description": "Mô phỏng ngân hàng số phân tán giải quyết bài toán chuyển tiền liên chi nhánh thông qua giao thức Two-Phase Commit (2PC), đảm bảo tính nhất quán dữ liệu, khả năng chịu lỗi và bất biến bảo toàn tiền tệ.",
     "nodes": [
-      { "id": "Coordinator", "port": 3000, "role": "Orchestrator", "description": "Điều phối viên 2PC toàn cục, routing cùng chi nhánh, kích hoạt phục hồi sự cố" },
-      { "id": "HN Node", "port": 3001, "role": "Participant", "description": "Nút chi nhánh Hà Nội quản lý tài khoản HN-*, lưu trữ file riêng biệt" },
-      { "id": "HCM Node", "port": 3002, "role": "Participant", "description": "Nút chi nhánh TP.HCM quản lý tài khoản HCM-*, lưu trữ file riêng biệt" },
-      { "id": "DN Node", "port": 3003, "role": "Participant", "description": "Nút chi nhánh Đà Nẵng quản lý tài khoản DN-*, lưu trữ file riêng biệt" }
+      {
+        "id": "Coordinator",
+        "port": 3000,
+        "role": "Orchestrator",
+        "description": "Điều phối viên 2PC toàn cục, routing cùng chi nhánh, kích hoạt phục hồi sự cố"
+      },
+      {
+        "id": "HN Node",
+        "port": 3001,
+        "role": "Participant",
+        "description": "Nút chi nhánh Hà Nội quản lý tài khoản HN-*, lưu trữ file riêng biệt"
+      },
+      {
+        "id": "HCM Node",
+        "port": 3002,
+        "role": "Participant",
+        "description": "Nút chi nhánh TP.HCM quản lý tài khoản HCM-*, lưu trữ file riêng biệt"
+      },
+      {
+        "id": "DN Node",
+        "port": 3003,
+        "role": "Participant",
+        "description": "Nút chi nhánh Đà Nẵng quản lý tài khoản DN-*, lưu trữ file riêng biệt"
+      }
     ]
   },
   "architecture": {
@@ -111,24 +137,132 @@
     }
   ],
   "features": [
-    { "category": "Core Nature", "name": "Sufficiently Spread Components", "status": "VERIFIED", "evidence": "4 tiến trình độc lập trên 4 cổng riêng biệt." },
-    { "category": "Core Nature", "name": "Single Coherent System", "status": "VERIFIED", "evidence": "App di động nhìn thấy toàn bộ tài khoản toàn quốc qua Coordinator." },
-    { "category": "Core Nature", "name": "Partial Failure Management", "status": "VERIFIED", "evidence": "Một chi nhánh lỗi không làm sập các chi nhánh còn lại." },
-    { "category": "Design Goals", "name": "Resource Sharing", "status": "VERIFIED", "evidence": "Chuyển tiền giữa các chi nhánh khác vùng địa lý." },
-    { "category": "Design Goals", "name": "Fault Tolerance", "status": "VERIFIED", "evidence": "Cơ chế bồi hoàn Rollback và tự phục hồi Crash Recovery." },
-    { "category": "Transparency", "name": "Access Transparency", "status": "VERIFIED", "evidence": "API chuẩn thống nhất /api/accounts/:id cho mọi chi nhánh." },
-    { "category": "Transparency", "name": "Location Transparency", "status": "VERIFIED", "evidence": "Client không cần biết IP/Port cụ thể của từng nút chi nhánh." },
-    { "category": "Transparency", "name": "Replication Transparency", "status": "NOT IMPLEMENTED", "evidence": "Mỗi chi nhánh chỉ gồm 1 nút duy nhất, chưa có cụm replica." },
-    { "category": "Transparency", "name": "Concurrency Transparency", "status": "PARTIAL", "evidence": "reservedBalance khóa số dư cơ bản, chưa có hàng đợi message queue." },
-    { "category": "8 Fallacies", "name": "Reliable Network", "status": "VERIFIED", "evidence": "Timeout 5000ms rõ ràng, bắt khối try/catch bắt buộc." },
-    { "category": "8 Fallacies", "name": "Zero Latency", "status": "VERIFIED", "evidence": "Bất đồng bộ async/await và UI loading state." },
-    { "category": "8 Fallacies", "name": "Security is Guaranteed", "status": "NOT IMPLEMENTED", "evidence": "HTTP nội bộ chưa mã hóa mTLS, mock login admin/admin123." },
-    { "category": "8 Fallacies", "name": "Topology is Fixed", "status": "NOT IMPLEMENTED", "evidence": "Khai báo tĩnh trong mảng config.nodes, chưa có Service Discovery." }
+    {
+      "category": "Core Nature",
+      "name": "Sufficiently Spread Components",
+      "status": "VERIFIED",
+      "evidence": "4 tiến trình độc lập trên 4 cổng riêng biệt."
+    },
+    {
+      "category": "Core Nature",
+      "name": "Single Coherent System",
+      "status": "VERIFIED",
+      "evidence": "App di động nhìn thấy toàn bộ tài khoản toàn quốc qua Coordinator."
+    },
+    {
+      "category": "Core Nature",
+      "name": "Partial Failure Management",
+      "status": "VERIFIED",
+      "evidence": "Một chi nhánh lỗi không làm sập các chi nhánh còn lại."
+    },
+    {
+      "category": "Design Goals",
+      "name": "Resource Sharing",
+      "status": "VERIFIED",
+      "evidence": "Chuyển tiền giữa các chi nhánh khác vùng địa lý."
+    },
+    {
+      "category": "Design Goals",
+      "name": "Fault Tolerance",
+      "status": "VERIFIED",
+      "evidence": "Cơ chế bồi hoàn Rollback và tự phục hồi Crash Recovery."
+    },
+    {
+      "category": "Transparency",
+      "name": "Access Transparency",
+      "status": "VERIFIED",
+      "evidence": "API chuẩn thống nhất /api/accounts/:id cho mọi chi nhánh."
+    },
+    {
+      "category": "Transparency",
+      "name": "Location Transparency",
+      "status": "VERIFIED",
+      "evidence": "Client không cần biết IP/Port cụ thể của từng nút chi nhánh."
+    },
+    {
+      "category": "Transparency",
+      "name": "Replication Transparency",
+      "status": "NOT IMPLEMENTED",
+      "evidence": "Mỗi chi nhánh chỉ gồm 1 nút duy nhất, chưa có cụm replica."
+    },
+    {
+      "category": "Transparency",
+      "name": "Concurrency Transparency",
+      "status": "PARTIAL",
+      "evidence": "reservedBalance khóa số dư cơ bản, chưa có hàng đợi message queue."
+    },
+    {
+      "category": "8 Fallacies",
+      "name": "Reliable Network",
+      "status": "VERIFIED",
+      "evidence": "Timeout 5000ms rõ ràng, bắt khối try/catch bắt buộc."
+    },
+    {
+      "category": "8 Fallacies",
+      "name": "Zero Latency",
+      "status": "VERIFIED",
+      "evidence": "Bất đồng bộ async/await và UI loading state."
+    },
+    {
+      "category": "8 Fallacies",
+      "name": "Security is Guaranteed",
+      "status": "NOT IMPLEMENTED",
+      "evidence": "HTTP nội bộ chưa mã hóa mTLS, mock login admin/admin123."
+    },
+    {
+      "category": "8 Fallacies",
+      "name": "Topology is Fixed",
+      "status": "NOT IMPLEMENTED",
+      "evidence": "Khai báo tĩnh trong mảng config.nodes, chưa có Service Discovery."
+    }
   ],
   "roadmap": [
-    { "title": "Khử điểm nghẽn Coordinator (SPOF)", "solution": "Thuật toán Raft/Paxos bầu chọn Leader cho nhóm Coordinator" },
-    { "title": "Nâng cấp lưu trữ bền vững", "solution": "Chuyển từ file JSON sang SQLite WAL hoặc PostgreSQL" },
-    { "title": "Tích hợp Message Broker", "solution": "Sử dụng Kafka / RabbitMQ cho pha Commit (Saga Pattern)" },
-    { "title": "Màn hình Chaos Control trên App", "solution": "Thêm tab cấu hình lỗi trên Android UI để người dùng gạt công tắc thử nghiệm" }
+    {
+      "title": "Khử điểm nghẽn Coordinator (SPOF)",
+      "solution": "Thuật toán Raft/Paxos bầu chọn Leader cho nhóm Coordinator"
+    },
+    {
+      "title": "Nâng cấp lưu trữ bền vững",
+      "solution": "Chuyển từ file JSON sang SQLite WAL hoặc PostgreSQL"
+    },
+    {
+      "title": "Tích hợp Message Broker",
+      "solution": "Sử dụng Kafka / RabbitMQ cho pha Commit (Saga Pattern)"
+    },
+    {
+      "title": "Màn hình Chaos Control trên App",
+      "solution": "Thêm tab cấu hình lỗi trên Android UI để người dùng gạt công tắc thử nghiệm"
+    }
+  ],
+  "statistics": {
+    "totalAccounts": 6,
+    "totalBalance": 79000000,
+    "byBranch": {
+      "HN": {
+        "count": 2,
+        "balance": 34000000
+      },
+      "HCM": {
+        "count": 2,
+        "balance": 21000000
+      },
+      "DN": {
+        "count": 2,
+        "balance": 24000000
+      }
+    },
+    "transactions": {
+      "totalTransactions": 2,
+      "committed": 2,
+      "aborted": 0
+    }
+  },
+  "changelog": [
+    {
+      "date": "2026-09-20",
+      "event": "Update: feat(docs): Complete HTML web report for distributed systems study",
+      "hash": "9b066fa",
+      "ver": "1.0.0"
+    }
   ]
 }

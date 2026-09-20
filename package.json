@@ -1,0 +1,13 @@
+{
+  "name": "digital-banking-distributed-systems",
+  "version": "1.0.0",
+  "description": "Digital Banking — Distributed Inter-Branch Transfer Simulation",
+  "scripts": {
+    "update-report": "node docs/scripts/update-report.js",
+    "report:update": "node docs/scripts/update-report.js",
+    "backend:start": "cd backend && npm run start:all",
+    "backend:coordinator": "cd backend && npm run coordinator",
+    "test:chaos": "cd backend && node chaos_test.js",
+    "test:recovery": "cd backend && node recovery_test.js"
+  }
+}
