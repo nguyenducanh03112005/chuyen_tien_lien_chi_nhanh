@@ -1,0 +1,134 @@
+{
+  "meta": {
+    "title": "Digital Banking — Chuyển tiền liên chi nhánh",
+    "subtitle": "Báo cáo Kỹ thuật & Học thuật Hệ thống phân tán",
+    "course": "Ứng dụng & Hệ thống phân tán (Distributed Systems)",
+    "version": "1.0.0",
+    "date": "Tháng 09/2026",
+    "status": "VERIFIED"
+  },
+  "overview": {
+    "description": "Mô phỏng ngân hàng số phân tán giải quyết bài toán chuyển tiền liên chi nhánh thông qua giao thức Two-Phase Commit (2PC), đảm bảo tính nhất quán dữ liệu, khả năng chịu lỗi và bất biến bảo toàn tiền tệ.",
+    "nodes": [
+      { "id": "Coordinator", "port": 3000, "role": "Orchestrator", "description": "Điều phối viên 2PC toàn cục, routing cùng chi nhánh, kích hoạt phục hồi sự cố" },
+      { "id": "HN Node", "port": 3001, "role": "Participant", "description": "Nút chi nhánh Hà Nội quản lý tài khoản HN-*, lưu trữ file riêng biệt" },
+      { "id": "HCM Node", "port": 3002, "role": "Participant", "description": "Nút chi nhánh TP.HCM quản lý tài khoản HCM-*, lưu trữ file riêng biệt" },
+      { "id": "DN Node", "port": 3003, "role": "Participant", "description": "Nút chi nhánh Đà Nẵng quản lý tài khoản DN-*, lưu trữ file riêng biệt" }
+    ]
+  },
+  "architecture": {
+    "client": "Android Native (Kotlin, Jetpack Compose, Material 3, MVVM, Retrofit2)",
+    "backend": "Node.js (Express, Axios, UUIDv4)",
+    "protocol": "Two-Phase Commit (2PC) với Timeout và State Machine nghiêm ngặt",
+    "persistence": "File-based JSON độc lập cho từng chi nhánh (Đảm bảo Resource Isolation)"
+  },
+  "moneyConservation": {
+    "rule": "Sum(BookBalance) + Sum(InFlightCommittedAmounts) = Constant",
+    "balanceTypes": {
+      "bookBalance": "Số dư sổ sách ghi nhận trên tài khoản (balance), chỉ thay đổi khi COMMIT",
+      "reservedBalance": "Số dư phong tỏa tạm giữ (reservedBalance), tăng ở pha PREPARE để khóa tiền",
+      "availableBalance": "Số dư khả dụng = balance - reservedBalance, dùng để kiểm tra điều kiện chuyển tiền"
+    }
+  },
+  "theoryMapping": [
+    {
+      "theory": "Two-Phase Commit (2PC)",
+      "implementation": "DistributedTransactionService (Coordinator) + TwoPhaseCommitService (Nodes)",
+      "evidence": "chaos_test.js: kịch bản chạy tuần tự qua CREATED -> PREPARING -> PREPARED -> COMMITTING -> COMMITTED",
+      "limitation": "2PC có tính chất chặn (blocking) nếu Coordinator sập giữa lúc chờ quyết định"
+    },
+    {
+      "theory": "Partial Failure (Lỗi từng phần)",
+      "implementation": "ChaosService hỗ trợ tiêm lỗi REJECT (từ chối bỏ phiếu) và TIMEOUT (trì hoãn 10s)",
+      "evidence": "chaos_test.js case 2: HCM từ chối ở Prepare -> Coordinator Abort, giải phóng tiền ở HN",
+      "limitation": "Mô phỏng qua HTTP sleep/error, chưa mô phỏng chia cắt mạng thực tế (Network Partition)"
+    },
+    {
+      "theory": "Crash Recovery",
+      "implementation": "Hàm recoverTransactions() tự động kích hoạt sau 5s khởi động Coordinator",
+      "evidence": "recovery_test.js: Gây lỗi commit HCM -> dừng ở COMMITTING -> phục hồi -> chuyển COMMITTED",
+      "limitation": "Recovery hiện do Coordinator chủ động định kỳ, participant chưa có giao thức tự vấn lẫn nhau"
+    },
+    {
+      "theory": "Idempotency",
+      "implementation": "Header Idempotency-Key (UUIDv4) bắt buộc ở API /api/transfers",
+      "evidence": "chaos_test.js case 4: Gửi lặp request kèm key cũ -> trả về kết quả cũ mà không trừ tiền lần hai",
+      "limitation": "Key lưu vĩnh viễn trong file JSON bộ nhớ, chưa có TTL dọn dẹp theo thời gian"
+    },
+    {
+      "theory": "Resource Isolation",
+      "implementation": "Phân vùng thư mục riêng biệt cho từng chi nhánh (nodes/hn/data, nodes/hcm/data, nodes/dn/data)",
+      "evidence": "Biến môi trường process.env.DATA_DIR tách biệt cho từng tiến trình",
+      "limitation": "Dữ liệu lưu file JSON với fs.writeFileSync đồng bộ, chưa có Row-level lock của RDBMS"
+    },
+    {
+      "theory": "Data Consistency",
+      "implementation": "Tách bạch balance và reservedBalance, khóa tiền khả dụng ngay ở pha Prepare",
+      "evidence": "Kiểm tra biến thiên số dư trong recovery_test.js: tiền bảo toàn suốt quá trình nút đích lỗi",
+      "limitation": "Client đọc dữ liệu vẫn có thể gặp Dirty Read nếu đọc đúng lúc đang truyền dở gói tin Commit"
+    }
+  ],
+  "failureMatrix": [
+    {
+      "point": "Phase 1: PREPARE",
+      "failureMode": "Participant từ chối (REJECT) do thiếu số dư / khóa thẻ",
+      "stateBefore": "PREPARING",
+      "expected": "ABORTED toàn cục",
+      "actual": "Coordinator chuyển ABORTING -> ABORTED",
+      "recovery": "Gửi lệnh /abort giải phóng reservedBalance ở nút nguồn"
+    },
+    {
+      "point": "Phase 1: PREPARE",
+      "failureMode": "Participant bị TIMEOUT (> 5s)",
+      "stateBefore": "PREPARING",
+      "expected": "ABORTED toàn cục",
+      "actual": "Catch NODE_UNAVAILABLE -> gán NO -> chuyển ABORTED",
+      "recovery": "Phát lệnh /abort tới tất cả các nút đã chuẩn bị"
+    },
+    {
+      "point": "Phase 2: COMMIT",
+      "failureMode": "Nút đích bị TIMEOUT khi Commit",
+      "stateBefore": "COMMITTING",
+      "expected": "Duy trì quyết định COMMIT (Không Abort)",
+      "actual": "Coordinator giữ trạng thái COMMITTING/UNKNOWN",
+      "recovery": "Gọi recoverTransfer() hoặc khởi động lại: tự động commit bù khi nút đích online"
+    },
+    {
+      "point": "Coordinator Crash",
+      "failureMode": "Coordinator bị tắt đột ngột sau khi quyết định COMMIT",
+      "stateBefore": "COMMITTING",
+      "expected": "Quyết định không bị mất (Bền vững)",
+      "actual": "Quyết định COMMIT đã ghi file JSON qua setGlobalDecision()",
+      "recovery": "recoverTransactions() tự động quét các giao dịch dang dở khi khởi động lại"
+    },
+    {
+      "point": "Client Retry",
+      "failureMode": "Mạng chập chờn, App gửi lại request cùng Idempotency-Key",
+      "stateBefore": "COMMITTED",
+      "expected": "Trả về kết quả cũ, không trừ tiền lần hai",
+      "actual": "Tra cứu tìm thấy key, trả về ngay thông tin giao dịch hiện tại",
+      "recovery": "Tính Idempotent bảo vệ số dư tài khoản người gửi"
+    }
+  ],
+  "features": [
+    { "category": "Core Nature", "name": "Sufficiently Spread Components", "status": "VERIFIED", "evidence": "4 tiến trình độc lập trên 4 cổng riêng biệt." },
+    { "category": "Core Nature", "name": "Single Coherent System", "status": "VERIFIED", "evidence": "App di động nhìn thấy toàn bộ tài khoản toàn quốc qua Coordinator." },
+    { "category": "Core Nature", "name": "Partial Failure Management", "status": "VERIFIED", "evidence": "Một chi nhánh lỗi không làm sập các chi nhánh còn lại." },
+    { "category": "Design Goals", "name": "Resource Sharing", "status": "VERIFIED", "evidence": "Chuyển tiền giữa các chi nhánh khác vùng địa lý." },
+    { "category": "Design Goals", "name": "Fault Tolerance", "status": "VERIFIED", "evidence": "Cơ chế bồi hoàn Rollback và tự phục hồi Crash Recovery." },
+    { "category": "Transparency", "name": "Access Transparency", "status": "VERIFIED", "evidence": "API chuẩn thống nhất /api/accounts/:id cho mọi chi nhánh." },
+    { "category": "Transparency", "name": "Location Transparency", "status": "VERIFIED", "evidence": "Client không cần biết IP/Port cụ thể của từng nút chi nhánh." },
+    { "category": "Transparency", "name": "Replication Transparency", "status": "NOT IMPLEMENTED", "evidence": "Mỗi chi nhánh chỉ gồm 1 nút duy nhất, chưa có cụm replica." },
+    { "category": "Transparency", "name": "Concurrency Transparency", "status": "PARTIAL", "evidence": "reservedBalance khóa số dư cơ bản, chưa có hàng đợi message queue." },
+    { "category": "8 Fallacies", "name": "Reliable Network", "status": "VERIFIED", "evidence": "Timeout 5000ms rõ ràng, bắt khối try/catch bắt buộc." },
+    { "category": "8 Fallacies", "name": "Zero Latency", "status": "VERIFIED", "evidence": "Bất đồng bộ async/await và UI loading state." },
+    { "category": "8 Fallacies", "name": "Security is Guaranteed", "status": "NOT IMPLEMENTED", "evidence": "HTTP nội bộ chưa mã hóa mTLS, mock login admin/admin123." },
+    { "category": "8 Fallacies", "name": "Topology is Fixed", "status": "NOT IMPLEMENTED", "evidence": "Khai báo tĩnh trong mảng config.nodes, chưa có Service Discovery." }
+  ],
+  "roadmap": [
+    { "title": "Khử điểm nghẽn Coordinator (SPOF)", "solution": "Thuật toán Raft/Paxos bầu chọn Leader cho nhóm Coordinator" },
+    { "title": "Nâng cấp lưu trữ bền vững", "solution": "Chuyển từ file JSON sang SQLite WAL hoặc PostgreSQL" },
+    { "title": "Tích hợp Message Broker", "solution": "Sử dụng Kafka / RabbitMQ cho pha Commit (Saga Pattern)" },
+    { "title": "Màn hình Chaos Control trên App", "solution": "Thêm tab cấu hình lỗi trên Android UI để người dùng gạt công tắc thử nghiệm" }
+  ]
+}
