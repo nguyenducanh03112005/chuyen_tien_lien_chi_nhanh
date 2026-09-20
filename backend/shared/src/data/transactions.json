@@ -1,0 +1,14 @@
+[
+  {
+    "transactionId": "TX-2067653B",
+    "idempotencyKey": "TEST-IDEM-001",
+    "sourceAccountId": "HN-001",
+    "destinationAccountId": "HCM-001",
+    "amount": 1000000,
+    "currency": "VND",
+    "status": "COMPLETED",
+    "type": "LOCAL",
+    "createdAt": "2026-09-14T08:46:44.382Z",
+    "updatedAt": "2026-09-14T08:46:44.382Z"
+  }
+]

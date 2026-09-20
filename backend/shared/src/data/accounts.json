@@ -1,0 +1,62 @@
+[
+  {
+    "id": "HN-001",
+    "ownerName": "Nguyễn Văn A",
+    "branchId": "HN",
+    "balance": 9000000,
+    "currency": "VND",
+    "status": "ACTIVE",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-09-14T08:46:44.313Z"
+  },
+  {
+    "id": "HN-002",
+    "ownerName": "Trần Thị B",
+    "branchId": "HN",
+    "balance": 25000000,
+    "currency": "VND",
+    "status": "ACTIVE",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "HCM-001",
+    "ownerName": "Lê Văn C",
+    "branchId": "HCM",
+    "balance": 9000000,
+    "currency": "VND",
+    "status": "ACTIVE",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-09-14T08:46:44.355Z"
+  },
+  {
+    "id": "HCM-002",
+    "ownerName": "Phạm Văn E",
+    "branchId": "HCM",
+    "balance": 12000000,
+    "currency": "VND",
+    "status": "ACTIVE",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "DN-001",
+    "ownerName": "Phạm Thị D",
+    "branchId": "DN",
+    "balance": 15000000,
+    "currency": "VND",
+    "status": "ACTIVE",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "DN-002",
+    "ownerName": "Hoàng Văn F",
+    "branchId": "DN",
+    "balance": 9000000,
+    "currency": "VND",
+    "status": "ACTIVE",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+]

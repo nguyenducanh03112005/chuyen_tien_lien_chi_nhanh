@@ -1,0 +1,14 @@
+[
+  {
+    "transactionId": "TX-0C6625B5",
+    "idempotencyKey": "50d626f6-a2bf-41ba-8b9a-9c29d94258ec",
+    "sourceAccountId": "HN-001",
+    "destinationAccountId": "HN-002",
+    "amount": 1111111,
+    "currency": "VND",
+    "status": "COMPLETED",
+    "type": "LOCAL",
+    "createdAt": "2026-09-18T04:21:21.268Z",
+    "updatedAt": "2026-09-18T04:21:21.268Z"
+  }
+]

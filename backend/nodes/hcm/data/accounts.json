@@ -1,0 +1,24 @@
+[
+  {
+    "id": "HCM-001",
+    "ownerName": "Lê Văn C",
+    "branchId": "HCM",
+    "balance": 9000000,
+    "currency": "VND",
+    "status": "ACTIVE",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-09-14T17:00:20.475Z",
+    "reservedBalance": 0
+  },
+  {
+    "id": "HCM-002",
+    "ownerName": "Phạm Văn E",
+    "branchId": "HCM",
+    "balance": 12000000,
+    "currency": "VND",
+    "status": "ACTIVE",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z",
+    "reservedBalance": 0
+  }
+]

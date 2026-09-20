@@ -1,0 +1,11 @@
+const getBranches = (req, res) => {
+  res.json([
+    { id: 'HN', name: 'Chi nhánh Hà Nội', location: 'Hà Nội' },
+    { id: 'HCM', name: 'Chi nhánh Hồ Chí Minh', location: 'Hồ Chí Minh' },
+    { id: 'DN', name: 'Chi nhánh Đà Nẵng', location: 'Đà Nẵng' }
+  ]);
+};
+
+module.exports = {
+  getBranches
+};

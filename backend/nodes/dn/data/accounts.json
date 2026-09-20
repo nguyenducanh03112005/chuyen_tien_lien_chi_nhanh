@@ -1,0 +1,24 @@
+[
+  {
+    "id": "DN-001",
+    "ownerName": "Phạm Thị D",
+    "branchId": "DN",
+    "balance": 15000000,
+    "currency": "VND",
+    "status": "ACTIVE",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z",
+    "reservedBalance": 0
+  },
+  {
+    "id": "DN-002",
+    "ownerName": "Hoàng Văn F",
+    "branchId": "DN",
+    "balance": 9000000,
+    "currency": "VND",
+    "status": "ACTIVE",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z",
+    "reservedBalance": 0
+  }
+]

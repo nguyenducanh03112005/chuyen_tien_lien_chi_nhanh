@@ -1,0 +1,26 @@
+[
+  {
+    "transactionId": "tx-435ecf9a-2794-432a-a64a-185cab5bab39",
+    "branchId": "HCM",
+    "role": "DESTINATION",
+    "accountId": "HCM-001",
+    "amount": 100000,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "reservedAmount": 0,
+    "createdAt": "2026-09-14T11:28:42.092Z",
+    "updatedAt": "2026-09-14T11:28:42.274Z"
+  },
+  {
+    "transactionId": "tx-c35ff3f7-0a0b-48d3-bc5b-cb5afd6100d5",
+    "branchId": "HCM",
+    "role": "SOURCE",
+    "accountId": "HCM-001",
+    "amount": 100000,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "reservedAmount": 100000,
+    "createdAt": "2026-09-14T17:00:20.272Z",
+    "updatedAt": "2026-09-14T17:00:20.498Z"
+  }
+]

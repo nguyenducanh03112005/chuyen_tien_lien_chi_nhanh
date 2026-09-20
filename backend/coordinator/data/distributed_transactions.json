@@ -1,0 +1,59 @@
+[
+  {
+    "transactionId": "tx-435ecf9a-2794-432a-a64a-185cab5bab39",
+    "idempotencyKey": "760b3f34-726d-4cab-ab90-d86ee138e3f4",
+    "sourceAccountId": "HN-001",
+    "destinationAccountId": "HCM-001",
+    "sourceBranchId": "HN",
+    "destinationBranchId": "HCM",
+    "amount": 100000,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "decision": "COMMIT",
+    "participants": [
+      {
+        "branchId": "HN",
+        "role": "SOURCE",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-14T11:28:42.304Z"
+      },
+      {
+        "branchId": "HCM",
+        "role": "DESTINATION",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-14T11:28:42.325Z"
+      }
+    ],
+    "createdAt": "2026-09-14T11:28:41.760Z",
+    "updatedAt": "2026-09-14T11:28:42.346Z"
+  },
+  {
+    "transactionId": "tx-c35ff3f7-0a0b-48d3-bc5b-cb5afd6100d5",
+    "idempotencyKey": "12de0eaa-490b-44d7-8b9d-2ae1bbafbd7b",
+    "sourceAccountId": "HCM-001",
+    "destinationAccountId": "HN-001",
+    "sourceBranchId": "HCM",
+    "destinationBranchId": "HN",
+    "amount": 100000,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "type": "DISTRIBUTED",
+    "decision": "COMMIT",
+    "participants": [
+      {
+        "branchId": "HCM",
+        "role": "SOURCE",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-14T17:00:20.525Z"
+      },
+      {
+        "branchId": "HN",
+        "role": "DESTINATION",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-14T17:00:20.547Z"
+      }
+    ],
+    "createdAt": "2026-09-14T17:00:20.020Z",
+    "updatedAt": "2026-09-14T17:00:20.571Z"
+  }
+]
