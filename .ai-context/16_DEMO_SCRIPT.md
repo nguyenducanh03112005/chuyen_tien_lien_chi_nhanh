@@ -1,85 +1,58 @@
-# Presentation / Demo Script
+# Presentation / Demo Script & Oral Defense
 
-## Scene 1 — Introduce the problem
-Show three branches:
-- HN
-- HCM
-- DN
+> **Tài liệu chi tiết đầy đủ (Master Guide)**: Xem tại [KICH_BAN_DEMO_VA_VAN_DAP.md](file:///e:/K%E1%BB%B3%207%20UDU/%E1%BB%A8ng%20d%E1%BB%A5ng%20&%20H%E1%BB%87%20th%E1%BB%91ng%20ph%C3%A2n%20t%C3%A1n/%E1%BB%A8ng%20d%E1%BB%A5ng/Chuy%E1%BB%83n%20ti%E1%BB%81n%20li%C3%AAn%20chi%20nh%C3%A1nh/docs/KICH_BAN_DEMO_VA_VAN_DAP.md)
 
-Explain:
-"Account data is partitioned across independent branch nodes. A transfer between branches becomes a distributed transaction."
+---
 
-## Scene 2 — Successful transfer
-Example:
-HN-001 has 1,000,000 VND.
-HCM-001 has 500,000 VND.
+## Tóm tắt 5 Cảnh trình diễn (5 Live Demo Scenes)
 
-Transfer:
-100,000 VND HN -> HCM.
+### Cảnh 1: Phân vùng dữ liệu (Data Partitioning) & Kiểm tra số dư 3 chi nhánh
+- **Bản chất**: 3 chi nhánh chạy 3 tiến trình độc lập (`HN:3001`, `HCM:3002`, `DN:3003`) với file lưu trữ riêng biệt (`accounts.json`). Coordinator (`:3000`) đóng vai trò điểm vào.
+- **Thao tác**: Mở app, lọc theo từng chi nhánh `TẤT CẢ`, `HN`, `HCM`, `DN`. Chỉ vào thẻ **Tổng số dư** toàn hệ thống ban đầu (79,000,000 VND).
 
-On Tracker:
-1. Created
-2. Prepare
-3. HN = YES
-4. HCM = YES
-5. Commit
-6. Both committed
+### Cảnh 2: Chuyển tiền liên chi nhánh thành công (Happy Path 2PC)
+- **Kịch bản**: Chuyển 100,000 VND từ `HN-001` sang `HCM-001`.
+- **Trực quan hóa 2PC**:
+  1. *Phase 1 (Prepare)*: HN khóa tiền vào `reservedBalance` (800k khả dụng), HCM kiểm tra tài khoản ACTIVE. Cả 2 cùng vote `YES`.
+  2. *Phase 2 (Commit)*: Coordinator ra quyết định `COMMIT`. HN trừ tiền thật, HCM cộng tiền thật.
+  3. *Bảo toàn tiền*: Tổng số dư toàn hệ thống không đổi. Lịch sử hiển thị `DISTRIBUTED`, `HN: COMMITTED`, `HCM: COMMITTED`.
 
-After:
-HN = 900,000
-HCM = 600,000
+### Cảnh 3: Sự cố Pha 1 — Prepare Failure & Global Abort (Rollback)
+- **Kịch bản**: Tiêm lỗi HCM từ chối vote ở Prepare:
+  ```bash
+  curl -X POST http://localhost:3002/api/chaos -H "Content-Type: application/json" -d "{\"enabled\": true, \"failurePoint\": \"PREPARE\", \"failureMode\": \"REJECT\"}"
+  ```
+- **Chuyển tiền**: Chuyển 200,000 VND `HN-001` $\rightarrow$ `HCM-001`.
+- **Hiện tượng**: App báo lỗi. HN tạm giữ rồi lập tức giải phóng `reservedBalance`. Số dư `HN-001` và `HCM-001` nguyên vẹn. Lịch sử ghi `ABORTED`.
+- **Tắt lỗi**: `curl -X POST http://localhost:3002/api/chaos -H "Content-Type: application/json" -d "{\"enabled\": false}"`.
 
-Total remains 1,500,000.
+### Cảnh 4: Sự cố Pha 2 — Commit Timeout & Crash Recovery (Điểm ăn điểm 10)
+- **Kịch bản**: Tiêm lỗi HCM timeout ở Commit:
+  ```bash
+  curl -X POST http://localhost:3002/api/chaos -H "Content-Type: application/json" -d "{\"enabled\": true, \"failurePoint\": \"COMMIT\", \"failureMode\": \"TIMEOUT\"}"
+  ```
+- **Chuyển tiền**: Chuyển 500,000 VND `HN-001` $\rightarrow$ `HCM-001`.
+- **Điểm học thuật mấu chốt**: HN đã Commit trừ tiền, HCM timeout. **TUYỆT ĐỐI KHÔNG ĐƯỢC ABORT** vì sẽ gây Double Spending! Trạng thái giữ nguyên là `COMMITTING` / `UNKNOWN`.
+- **Phục hồi**: Tắt chaos và chạy script phục hồi `npm run test:recovery`. Coordinator commit bù sang HCM, giao dịch đạt `COMMITTED`, bảo toàn 100% dòng tiền.
 
-## Scene 3 — Failure
-Turn HCM Prepare failure ON.
+### Cảnh 5: Idempotency Key & Kiểm chứng tự động
+- Gửi 2 lần cùng một `Idempotency-Key` $\rightarrow$ Coordinator trả về ngay giao dịch cũ, không tạo mới, không trừ tiền lần 2.
+- Chạy toàn bộ test suite tự động:
+  ```bash
+  npm run test:chaos
+  ```
 
-Start the same transfer.
+---
 
-Show:
-- HN prepares/reserves.
-- HCM votes NO or times out.
-- Coordinator decides ABORT.
-- HN rolls back/releases reservation.
-- HCM does not receive money.
+## 5 Câu hỏi vấn đáp then chốt thường gặp nhất
 
-After:
-HN = original balance
-HCM = original balance
-
-## Scene 4 — Explain the key property
-Say:
-"The important property is not merely that the app reports failure. We verify that no participant keeps a partial monetary effect."
-
-Then show the before/after audit.
-
-## Scene 5 — Recovery
-Turn HCM back online.
-
-Repeat the transfer.
-
-Show successful 2PC again.
-
-## Scene 6 — Idempotency
-Submit the same request twice with the same Idempotency-Key.
-
-Show:
-- same transaction ID/result
-- no second debit
-
-## Questions the lecturer may ask
-
-### Why not simply debit A then credit B?
-Because a failure between those operations can leave an inconsistent state.
-
-### Why 2PC?
-It separates Prepare from the final Commit decision and gives the coordinator a global commit/abort decision.
-
-### What happens if one node fails during Prepare?
-The coordinator cannot obtain unanimous YES, so it aborts and asks prepared participants to roll back.
-
-### What if a node fails after Commit was decided?
-Do not blindly rollback. The system must recover/reconcile the durable commit decision.
-
-### How do you prove no money is created/lost?
-Compare the sum of all authoritative account balances before and after, plus transaction-level source/destination deltas.
+1. **Tại sao dùng 2PC thay vì Saga hay Raft?**
+   - 2PC đảm bảo tính Nhất quán mạnh (Strong Consistency / ACID) cho giao dịch chuyển khoản tài chính tức thì. Saga là eventual consistency (phù hợp luồng dài ngày). Raft là sao chép trạng thái nội bộ chi nhánh (replication), còn 2PC là cam kết nguyên tử xuyên chi nhánh (cross-partition atomic commit).
+2. **Nhược điểm lớn nhất của 2PC?**
+   - Là giao thức dạng chặn (Blocking Protocol), Coordinator là điểm nghẽn đơn lẻ (SPOF), giữ khóa tài nguyên phong tỏa trong suốt thời gian trễ mạng.
+3. **Phân biệt Book Balance, Reserved Balance, Available Balance?**
+   - Book Balance: Số dư thực tế sổ sách (chỉ trừ/cộng ở Commit). Reserved Balance: Tiền tạm giữ ở Prepare. Available Balance: Book - Reserved (người dùng chỉ được tiêu tiền trong hạn mức này).
+4. **Tại sao ở Pha 2 khi nút đích Timeout, Coordinator lại KHÔNG rollback nút nguồn?**
+   - Vì nút nguồn đã thực thi trừ tiền rồi. Nếu tự ý rollback thì vi phạm tính Bền vững (Durability) và nguy cơ nút đích nhận được gói Commit muộn sẽ dẫn đến lỗi nhân đôi tiền (Double Spending). Hệ thống phải giữ trạng thái cam kết và chạy Crash Recovery để commit bù.
+5. **Đồ án giải quyết vấn đề Coordinator Crash thế nào?**
+   - Quyết định Commit/Abort được ghi bền vững xuống file trước khi gửi lệnh đi (Write-Ahead Log). Khi Coordinator khởi động lại, hàm `recoverTransactions()` tự động quét các giao dịch `COMMITTING`/`UNKNOWN` để gửi lệnh cam kết bù.

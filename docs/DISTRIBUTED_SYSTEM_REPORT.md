@@ -4,7 +4,7 @@
 > **Loại tài liệu**: Living Technical & Academic Report  
 > **Môn học**: Ứng dụng & Hệ thống phân tán (Distributed Systems)  
 > **Phiên bản tài liệu**: `v1.0.0` (Cập nhật dựa trên kiểm tra mã nguồn thực tế)  
-> **Thời điểm xác minh**: 21/09/2026 00:54 (Git: `5011d09` - Nhánh: `main`)
+> **Thời điểm xác minh**: 22/09/2026 15:41 (Git: `42ab075` - Nhánh: `main`)
 > **Quy ước trạng thái tính năng**:
 > - `PLANNED`: Đang trong kế hoạch, chưa có code.
 > - `IN PROGRESS`: Đang viết dở, chưa tích hợp hoàn chỉnh.

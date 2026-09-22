@@ -9,6 +9,8 @@
     "node:hcm": "node nodes/hcm/server.js",
     "node:dn": "node nodes/dn/server.js",
     "start:all": "node node_modules/concurrently/dist/bin/concurrently.js --kill-others \"npm run coordinator\" \"npm run node:hn\" \"npm run node:hcm\" \"npm run node:dn\"",
+    "test:chaos": "node chaos_test.js",
+    "test:recovery": "node recovery_test.js",
     "update-report": "node ../docs/scripts/update-report.js",
     "report:update": "node ../docs/scripts/update-report.js"
   },
