@@ -16,6 +16,7 @@ const createTransfer = async (req, res) => {
 
   // 1. Same-branch transfer routing (Keep existing local behavior)
   if (sourceBranch === destBranch && sourceBranch) {
+    console.log(`\n[COORDINATOR] POST /api/transfers: Local transfer within ${sourceBranch} (${sourceAccountId} -> ${destinationAccountId}, amount: ${amount} ${currency})`);
     const url = accountController.getBranchUrl(sourceBranch);
     try {
       const response = await axios.post(`${url}/api/transfers`, req.body, {
@@ -32,6 +33,8 @@ const createTransfer = async (req, res) => {
   if (!sourceBranch || !destBranch) {
     return res.status(400).json({ success: false, message: 'Invalid account ID format' });
   }
+
+  console.log(`\n[COORDINATOR] POST /api/transfers: Cross-branch 2PC transfer (${sourceAccountId} -> ${destinationAccountId}, amount: ${amount} ${currency})`);
 
   try {
     let transaction = distributedTransactionService.createTransaction({
@@ -111,9 +114,19 @@ const recoverTransfer = async (req, res) => {
   }
 };
 
+const recoverAllTransfers = async (req, res) => {
+  try {
+    const result = await distributedTransactionService.recoverTransactions();
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   createTransfer,
   getTransferById,
   getTransfers,
-  recoverTransfer
+  recoverTransfer,
+  recoverAllTransfers
 };

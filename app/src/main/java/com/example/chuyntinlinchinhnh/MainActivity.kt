@@ -234,23 +234,71 @@ fun TransferScreen(viewModel: BankingViewModel, onBack: () -> Unit) {
         }
     ) { padding ->
         if (transferState is TransferUiState.Success) {
-            val transactionId = (transferState as TransferUiState.Success).transactionId
+            val success = transferState as TransferUiState.Success
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
                     Text("✅", fontSize = 64.sp)
                     Text("Giao dịch thành công", style = MaterialTheme.typography.headlineSmall)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Mã giao dịch:", style = MaterialTheme.typography.labelLarge)
-                    Text(transactionId, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                    Text(success.transactionId, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Tiền đã được chuyển thành công giữa các chi nhánh qua giao thức 2PC.",
+                        text = success.message,
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Hoàn tất") }
+                }
+            }
+        } else if (transferState is TransferUiState.Aborted) {
+            val aborted = transferState as TransferUiState.Aborted
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
+                    Text("❌", fontSize = 64.sp)
+                    Text("Giao dịch bị hủy (ABORTED)", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.error)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Mã giao dịch:", style = MaterialTheme.typography.labelLarge)
+                    Text(aborted.transactionId, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = aborted.message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = onBack,
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Quay về Dashboard") }
+                }
+            }
+        } else if (transferState is TransferUiState.Pending) {
+            val pending = transferState as TransferUiState.Pending
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
+                    Text("⏳", fontSize = 64.sp)
+                    Text("Giao dịch đang cam kết (COMMITTING)", style = MaterialTheme.typography.headlineSmall, color = Color(0xFFF57C00))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Mã giao dịch:", style = MaterialTheme.typography.labelLarge)
+                    Text(pending.transactionId, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = pending.message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = onBack,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF57C00)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Quay về Dashboard") }
                 }
             }
         } else {

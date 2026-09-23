@@ -18,22 +18,22 @@
   3. *Bảo toàn tiền*: Tổng số dư toàn hệ thống không đổi. Lịch sử hiển thị `DISTRIBUTED`, `HN: COMMITTED`, `HCM: COMMITTED`.
 
 ### Cảnh 3: Sự cố Pha 1 — Prepare Failure & Global Abort (Rollback)
-- **Kịch bản**: Tiêm lỗi HCM từ chối vote ở Prepare:
-  ```bash
-  curl -X POST http://localhost:3002/api/chaos -H "Content-Type: application/json" -d "{\"enabled\": true, \"failurePoint\": \"PREPARE\", \"failureMode\": \"REJECT\"}"
+- **Kịch bản**: Tiêm lỗi HCM từ chối vote ở Prepare (PowerShell):
+  ```powershell
+  Invoke-RestMethod -Uri "http://localhost:3002/api/chaos" -Method Post -ContentType "application/json" -Body '{"enabled": true, "failurePoint": "PREPARE", "failureMode": "REJECT"}'
   ```
 - **Chuyển tiền**: Chuyển 200,000 VND `HN-001` $\rightarrow$ `HCM-001`.
-- **Hiện tượng**: App báo lỗi. HN tạm giữ rồi lập tức giải phóng `reservedBalance`. Số dư `HN-001` và `HCM-001` nguyên vẹn. Lịch sử ghi `ABORTED`.
-- **Tắt lỗi**: `curl -X POST http://localhost:3002/api/chaos -H "Content-Type: application/json" -d "{\"enabled\": false}"`.
+- **Hiện tượng**: App báo lỗi **❌ Giao dịch bị hủy (ABORTED)**. HN tạm giữ rồi lập tức giải phóng `reservedBalance`. Số dư `HN-001` và `HCM-001` nguyên vẹn. Lịch sử ghi `ABORTED`.
+- **Tắt lỗi**: `Invoke-RestMethod -Uri "http://localhost:3002/api/chaos" -Method Post -ContentType "application/json" -Body '{"enabled": false}'`.
 
 ### Cảnh 4: Sự cố Pha 2 — Commit Timeout & Crash Recovery (Điểm ăn điểm 10)
-- **Kịch bản**: Tiêm lỗi HCM timeout ở Commit:
-  ```bash
-  curl -X POST http://localhost:3002/api/chaos -H "Content-Type: application/json" -d "{\"enabled\": true, \"failurePoint\": \"COMMIT\", \"failureMode\": \"TIMEOUT\"}"
+- **Kịch bản**: Tiêm lỗi HCM timeout ở Commit (PowerShell):
+  ```powershell
+  Invoke-RestMethod -Uri "http://localhost:3002/api/chaos" -Method Post -ContentType "application/json" -Body '{"enabled": true, "failurePoint": "COMMIT", "failureMode": "TIMEOUT"}'
   ```
 - **Chuyển tiền**: Chuyển 500,000 VND `HN-001` $\rightarrow$ `HCM-001`.
 - **Điểm học thuật mấu chốt**: HN đã Commit trừ tiền, HCM timeout. **TUYỆT ĐỐI KHÔNG ĐƯỢC ABORT** vì sẽ gây Double Spending! Trạng thái giữ nguyên là `COMMITTING` / `UNKNOWN`.
-- **Phục hồi**: Tắt chaos và chạy script phục hồi `npm run test:recovery`. Coordinator commit bù sang HCM, giao dịch đạt `COMMITTED`, bảo toàn 100% dòng tiền.
+- **Phục hồi**: Tắt chaos (`Invoke-RestMethod -Uri "http://localhost:3002/api/chaos" -Method Post -ContentType "application/json" -Body '{"enabled": false}'`) và chạy script phục hồi `npm run recover`. Coordinator commit bù sang HCM, giao dịch đạt `COMMITTED`, bảo toàn 100% dòng tiền.
 
 ### Cảnh 5: Idempotency Key & Kiểm chứng tự động
 - Gửi 2 lần cùng một `Idempotency-Key` $\rightarrow$ Coordinator trả về ngay giao dịch cũ, không tạo mới, không trừ tiền lần 2.

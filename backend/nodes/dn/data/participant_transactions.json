@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "transactionId": "tx-acbe6eb1-d866-41ea-a42f-439845bba761",
+    "branchId": "DN",
+    "role": "SOURCE",
+    "accountId": "DN-001",
+    "amount": 100,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "reservedAmount": 100,
+    "createdAt": "2026-09-23T02:39:18.996Z",
+    "updatedAt": "2026-09-23T02:39:19.144Z"
+  },
+  {
+    "transactionId": "tx-3e851ed7-1934-4868-8033-f0ac24180d13",
+    "branchId": "DN",
+    "role": "SOURCE",
+    "accountId": "DN-001",
+    "amount": 100,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "reservedAmount": 100,
+    "createdAt": "2026-09-23T02:46:19.757Z",
+    "updatedAt": "2026-09-23T02:46:19.955Z"
+  }
+]

@@ -7,7 +7,11 @@
     "report:update": "node docs/scripts/update-report.js",
     "backend:start": "cd backend && npm run start:all",
     "backend:coordinator": "cd backend && npm run coordinator",
+    "demo:check": "cd backend && node demo_viva.js preflight",
+    "demo:all": "cd backend && node demo_viva.js all",
     "test:chaos": "cd backend && node chaos_test.js",
-    "test:recovery": "cd backend && node recovery_test.js"
+    "test:recovery": "cd backend && node recovery_test.js",
+    "recover": "cd backend && node recover.js",
+    "reset": "cd backend && node reset_data.js"
   }
 }

@@ -55,5 +55,498 @@
     ],
     "createdAt": "2026-09-14T17:00:20.020Z",
     "updatedAt": "2026-09-14T17:00:20.571Z"
+  },
+  {
+    "transactionId": "tx-35dda00e-0368-4fe6-bde9-662d35393e51",
+    "idempotencyKey": "c7df21fd-35d0-498d-a1e4-3d4b32fcc7b8",
+    "sourceAccountId": "HN-002",
+    "destinationAccountId": "HCM-001",
+    "sourceBranchId": "HN",
+    "destinationBranchId": "HCM",
+    "amount": 1111111,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "type": "DISTRIBUTED",
+    "decision": "COMMIT",
+    "participants": [
+      {
+        "branchId": "HN",
+        "role": "SOURCE",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:16:06.153Z"
+      },
+      {
+        "branchId": "HCM",
+        "role": "DESTINATION",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:16:06.178Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:16:05.436Z",
+    "updatedAt": "2026-09-23T02:16:06.203Z"
+  },
+  {
+    "transactionId": "tx-65100ebc-ee43-4f6d-a505-c7566711d30a",
+    "idempotencyKey": "9ee598e6-78b0-47e2-acbd-6bc088c9d96f",
+    "sourceAccountId": "HCM-001",
+    "destinationAccountId": "HN-001",
+    "sourceBranchId": "HCM",
+    "destinationBranchId": "HN",
+    "amount": 1111111,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "type": "DISTRIBUTED",
+    "decision": "COMMIT",
+    "participants": [
+      {
+        "branchId": "HCM",
+        "role": "SOURCE",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:17:08.171Z"
+      },
+      {
+        "branchId": "HN",
+        "role": "DESTINATION",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:17:08.196Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:17:07.857Z",
+    "updatedAt": "2026-09-23T02:17:08.221Z"
+  },
+  {
+    "transactionId": "tx-f11d4cad-d639-461b-bd42-05e438fe1ddb",
+    "idempotencyKey": "abe9a6a2-870e-4d0a-9007-4316c40c548e",
+    "sourceAccountId": "HN-001",
+    "destinationAccountId": "HCM-001",
+    "sourceBranchId": "HN",
+    "destinationBranchId": "HCM",
+    "amount": 100000,
+    "currency": "VND",
+    "status": "ABORTED",
+    "type": "DISTRIBUTED",
+    "decision": "ABORT",
+    "participants": [
+      {
+        "branchId": "HN",
+        "role": "SOURCE",
+        "status": "PREPARED",
+        "updatedAt": "2026-09-23T02:24:50.307Z"
+      },
+      {
+        "branchId": "HCM",
+        "role": "DESTINATION",
+        "status": "FAILED",
+        "updatedAt": "2026-09-23T02:24:50.328Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:24:50.194Z",
+    "updatedAt": "2026-09-23T02:24:50.456Z"
+  },
+  {
+    "transactionId": "tx-eb712484-cd95-4980-b3cc-19912d3b09cc",
+    "idempotencyKey": "84c46472-587e-4fe3-ad18-5f9410d1c659",
+    "sourceAccountId": "HN-001",
+    "destinationAccountId": "HCM-001",
+    "sourceBranchId": "HN",
+    "destinationBranchId": "HCM",
+    "amount": 500000,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "type": "DISTRIBUTED",
+    "decision": "COMMIT",
+    "participants": [
+      {
+        "branchId": "HN",
+        "role": "SOURCE",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:42:59.670Z"
+      },
+      {
+        "branchId": "HCM",
+        "role": "DESTINATION",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:42:59.694Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:30:46.349Z",
+    "updatedAt": "2026-09-23T02:42:59.719Z"
+  },
+  {
+    "transactionId": "tx-174f1e39-c037-4851-9b63-08593a7daca4",
+    "idempotencyKey": "recovery-test-1790130772052",
+    "sourceAccountId": "HN-001",
+    "destinationAccountId": "HCM-001",
+    "sourceBranchId": "HN",
+    "destinationBranchId": "HCM",
+    "amount": 500000,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "type": "DISTRIBUTED",
+    "decision": "COMMIT",
+    "participants": [
+      {
+        "branchId": "HN",
+        "role": "SOURCE",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:32:57.647Z"
+      },
+      {
+        "branchId": "HCM",
+        "role": "DESTINATION",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:32:57.669Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:32:52.061Z",
+    "updatedAt": "2026-09-23T02:32:57.670Z"
+  },
+  {
+    "transactionId": "tx-543f951c-3a57-4dde-a992-cb2ccc7a39bc",
+    "idempotencyKey": "chaos-test-1790131152820",
+    "sourceAccountId": "HN-001",
+    "destinationAccountId": "HCM-001",
+    "sourceBranchId": "HN",
+    "destinationBranchId": "HCM",
+    "amount": 100000,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "type": "DISTRIBUTED",
+    "decision": "COMMIT",
+    "participants": [
+      {
+        "branchId": "HN",
+        "role": "SOURCE",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:39:13.120Z"
+      },
+      {
+        "branchId": "HCM",
+        "role": "DESTINATION",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:39:13.144Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:39:12.837Z",
+    "updatedAt": "2026-09-23T02:39:13.167Z"
+  },
+  {
+    "transactionId": "tx-532253e0-595a-455e-ae53-60a47592d537",
+    "idempotencyKey": "chaos-test-1790131153228",
+    "sourceAccountId": "HN-002",
+    "destinationAccountId": "HCM-002",
+    "sourceBranchId": "HN",
+    "destinationBranchId": "HCM",
+    "amount": 50000,
+    "currency": "VND",
+    "status": "ABORTED",
+    "type": "DISTRIBUTED",
+    "decision": "ABORT",
+    "participants": [
+      {
+        "branchId": "HN",
+        "role": "SOURCE",
+        "status": "PREPARED",
+        "updatedAt": "2026-09-23T02:39:13.338Z"
+      },
+      {
+        "branchId": "HCM",
+        "role": "DESTINATION",
+        "status": "FAILED",
+        "updatedAt": "2026-09-23T02:39:13.362Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:39:13.236Z",
+    "updatedAt": "2026-09-23T02:39:13.504Z"
+  },
+  {
+    "transactionId": "tx-79582f10-ee5e-4fb9-8cdd-995af84b613f",
+    "idempotencyKey": "chaos-test-1790131153588",
+    "sourceAccountId": "HN-001",
+    "destinationAccountId": "HCM-001",
+    "sourceBranchId": "HN",
+    "destinationBranchId": "HCM",
+    "amount": 10000,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "type": "DISTRIBUTED",
+    "decision": "COMMIT",
+    "participants": [
+      {
+        "branchId": "HN",
+        "role": "SOURCE",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:42:59.802Z"
+      },
+      {
+        "branchId": "HCM",
+        "role": "DESTINATION",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:42:59.830Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:39:13.598Z",
+    "updatedAt": "2026-09-23T02:42:59.862Z"
+  },
+  {
+    "transactionId": "tx-acbe6eb1-d866-41ea-a42f-439845bba761",
+    "idempotencyKey": "idem-test-key",
+    "sourceAccountId": "DN-001",
+    "destinationAccountId": "HN-001",
+    "sourceBranchId": "DN",
+    "destinationBranchId": "HN",
+    "amount": 100,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "type": "DISTRIBUTED",
+    "decision": "COMMIT",
+    "participants": [
+      {
+        "branchId": "DN",
+        "role": "SOURCE",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:39:19.163Z"
+      },
+      {
+        "branchId": "HN",
+        "role": "DESTINATION",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:39:19.189Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:39:18.916Z",
+    "updatedAt": "2026-09-23T02:39:19.209Z"
+  },
+  {
+    "transactionId": "tx-dbd68e11-1518-42c3-989b-566f827cc65b",
+    "idempotencyKey": "chaos-test-1790131514104",
+    "sourceAccountId": "HN-001",
+    "destinationAccountId": "HCM-001",
+    "sourceBranchId": "HN",
+    "destinationBranchId": "HCM",
+    "amount": 100000,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "type": "DISTRIBUTED",
+    "decision": "COMMIT",
+    "participants": [
+      {
+        "branchId": "HN",
+        "role": "SOURCE",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:45:14.496Z"
+      },
+      {
+        "branchId": "HCM",
+        "role": "DESTINATION",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:45:14.518Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:45:14.211Z",
+    "updatedAt": "2026-09-23T02:45:14.544Z"
+  },
+  {
+    "transactionId": "tx-8be42988-a393-4a60-a8dd-bb88b7758ffd",
+    "idempotencyKey": "chaos-test-1790131514608",
+    "sourceAccountId": "HN-002",
+    "destinationAccountId": "HCM-002",
+    "sourceBranchId": "HN",
+    "destinationBranchId": "HCM",
+    "amount": 50000,
+    "currency": "VND",
+    "status": "ABORTED",
+    "type": "DISTRIBUTED",
+    "decision": "ABORT",
+    "participants": [
+      {
+        "branchId": "HN",
+        "role": "SOURCE",
+        "status": "PREPARED",
+        "updatedAt": "2026-09-23T02:45:14.715Z"
+      },
+      {
+        "branchId": "HCM",
+        "role": "DESTINATION",
+        "status": "FAILED",
+        "updatedAt": "2026-09-23T02:45:14.741Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:45:14.614Z",
+    "updatedAt": "2026-09-23T02:45:14.873Z"
+  },
+  {
+    "transactionId": "tx-3f1f0eb5-9c11-44b8-b0d2-1605545ac42d",
+    "idempotencyKey": "chaos-test-1790131514940",
+    "sourceAccountId": "HN-001",
+    "destinationAccountId": "HCM-001",
+    "sourceBranchId": "HN",
+    "destinationBranchId": "HCM",
+    "amount": 10000,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "type": "DISTRIBUTED",
+    "decision": "COMMIT",
+    "participants": [
+      {
+        "branchId": "HN",
+        "role": "SOURCE",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:47:45.265Z"
+      },
+      {
+        "branchId": "HCM",
+        "role": "DESTINATION",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:47:45.298Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:45:14.945Z",
+    "updatedAt": "2026-09-23T02:47:45.325Z"
+  },
+  {
+    "transactionId": "tx-1c8438dc-4a85-4ed8-acdf-43eb7057199a",
+    "idempotencyKey": "chaos-test-1790131573407",
+    "sourceAccountId": "HN-001",
+    "destinationAccountId": "HCM-001",
+    "sourceBranchId": "HN",
+    "destinationBranchId": "HCM",
+    "amount": 100000,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "type": "DISTRIBUTED",
+    "decision": "COMMIT",
+    "participants": [
+      {
+        "branchId": "HN",
+        "role": "SOURCE",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:46:13.705Z"
+      },
+      {
+        "branchId": "HCM",
+        "role": "DESTINATION",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:46:13.727Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:46:13.414Z",
+    "updatedAt": "2026-09-23T02:46:13.754Z"
+  },
+  {
+    "transactionId": "tx-2dbda706-ecb3-4266-a33b-67aa4358e816",
+    "idempotencyKey": "chaos-test-1790131573813",
+    "sourceAccountId": "HN-002",
+    "destinationAccountId": "HCM-002",
+    "sourceBranchId": "HN",
+    "destinationBranchId": "HCM",
+    "amount": 50000,
+    "currency": "VND",
+    "status": "ABORTED",
+    "type": "DISTRIBUTED",
+    "decision": "ABORT",
+    "participants": [
+      {
+        "branchId": "HN",
+        "role": "SOURCE",
+        "status": "PREPARED",
+        "updatedAt": "2026-09-23T02:46:13.921Z"
+      },
+      {
+        "branchId": "HCM",
+        "role": "DESTINATION",
+        "status": "FAILED",
+        "updatedAt": "2026-09-23T02:46:13.948Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:46:13.820Z",
+    "updatedAt": "2026-09-23T02:46:14.094Z"
+  },
+  {
+    "transactionId": "tx-c2a0e849-ffc3-4b9e-8c3e-61c457b3a373",
+    "idempotencyKey": "chaos-test-1790131574169",
+    "sourceAccountId": "HN-001",
+    "destinationAccountId": "HCM-001",
+    "sourceBranchId": "HN",
+    "destinationBranchId": "HCM",
+    "amount": 10000,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "type": "DISTRIBUTED",
+    "decision": "COMMIT",
+    "participants": [
+      {
+        "branchId": "HN",
+        "role": "SOURCE",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:46:19.577Z"
+      },
+      {
+        "branchId": "HCM",
+        "role": "DESTINATION",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:46:19.600Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:46:14.178Z",
+    "updatedAt": "2026-09-23T02:46:19.625Z"
+  },
+  {
+    "transactionId": "tx-3e851ed7-1934-4868-8033-f0ac24180d13",
+    "idempotencyKey": "idem-test-1790131579665",
+    "sourceAccountId": "DN-001",
+    "destinationAccountId": "HN-001",
+    "sourceBranchId": "DN",
+    "destinationBranchId": "HN",
+    "amount": 100,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "type": "DISTRIBUTED",
+    "decision": "COMMIT",
+    "participants": [
+      {
+        "branchId": "DN",
+        "role": "SOURCE",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:46:19.979Z"
+      },
+      {
+        "branchId": "HN",
+        "role": "DESTINATION",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:46:20.003Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:46:19.672Z",
+    "updatedAt": "2026-09-23T02:46:20.031Z"
+  },
+  {
+    "transactionId": "tx-9de11ed0-2ca1-48c5-9762-aa6e3d2134bf",
+    "idempotencyKey": "recovery-test-1790131650419",
+    "sourceAccountId": "HN-001",
+    "destinationAccountId": "HCM-001",
+    "sourceBranchId": "HN",
+    "destinationBranchId": "HCM",
+    "amount": 500000,
+    "currency": "VND",
+    "status": "COMMITTED",
+    "type": "DISTRIBUTED",
+    "decision": "COMMIT",
+    "participants": [
+      {
+        "branchId": "HN",
+        "role": "SOURCE",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:47:35.903Z"
+      },
+      {
+        "branchId": "HCM",
+        "role": "DESTINATION",
+        "status": "COMMITTED",
+        "updatedAt": "2026-09-23T02:47:35.934Z"
+      }
+    ],
+    "createdAt": "2026-09-23T02:47:30.427Z",
+    "updatedAt": "2026-09-23T02:47:35.968Z"
   }
 ]

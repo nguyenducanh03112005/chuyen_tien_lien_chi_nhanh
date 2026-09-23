@@ -153,11 +153,11 @@ Mở sẵn 1 terminal PowerShell / Git Bash để copy nhanh các lệnh `curl` 
 > *Khi em thực hiện chuyển tiền từ HN sang HCM: Node HN đã sẵn sàng và tạm giữ tiền, nhưng HCM trả về NO. Coordinator sẽ lập tức ra quyết định toàn cục `ABORT`, yêu cầu Node HN hủy bỏ phong tỏa (Rollback / Release Reservation). Tiền khả dụng của tài khoản HN sẽ được phục hồi nguyên vẹn!"*
 
 ### Thao tác demo:
-1. **Tiêm lỗi (Terminal phụ)**:
-   ```bash
-   curl -X POST http://localhost:3002/api/chaos -H "Content-Type: application/json" -d "{\"enabled\": true, \"failurePoint\": \"PREPARE\", \"failureMode\": \"REJECT\"}"
+1. **Tiêm lỗi (Terminal phụ - PowerShell)**:
+   ```powershell
+   Invoke-RestMethod -Uri "http://localhost:3002/api/chaos" -Method Post -ContentType "application/json" -Body '{"enabled": true, "failurePoint": "PREPARE", "failureMode": "REJECT"}'
    ```
-   *(Terminal sẽ báo: Chaos set on HCM: point=PREPARE, mode=REJECT)*
+   *(Terminal sẽ báo: `enabled: True, failurePoint: PREPARE, failureMode: REJECT`)*
 2. **Thực hiện chuyển tiền trên App**:
    - Nguồn: `HN-001`
    - Chi nhánh nhận: `HCM`
@@ -165,7 +165,7 @@ Mở sẵn 1 terminal PowerShell / Git Bash để copy nhanh các lệnh `curl` 
    - Số tiền: `200000`
    - Bấm **Tiếp tục** $\rightarrow$ **Xác nhận**.
 3. **Quan sát ứng xử**:
-   - App hiển thị thông báo lỗi giao dịch.
+   - App hiển thị thông báo lỗi giao dịch: **❌ Giao dịch bị hủy (ABORTED)**.
    - Quay về Dashboard:
      - Số dư của `HN-001` **vẫn giữ nguyên**, không bị trừ 200,000 VND.
      - Số dư tạm giữ (`reservedBalance`) **bằng 0**.
@@ -173,9 +173,9 @@ Mở sẵn 1 terminal PowerShell / Git Bash để copy nhanh các lệnh `curl` 
 4. **Vào màn hình Lịch sử (History)**:
    - Giao dịch hiển thị trạng thái `ABORTED` màu đỏ.
    - Các bên tham gia: `HN: ABORTED`, `HCM: FAILED`.
-5. **Tắt lỗi Chaos để đưa hệ thống về bình thường**:
-   ```bash
-   curl -X POST http://localhost:3002/api/chaos -H "Content-Type: application/json" -d "{\"enabled\": false}"
+5. **Tắt lỗi Chaos để đưa hệ thống về bình thường (PowerShell)**:
+   ```powershell
+   Invoke-RestMethod -Uri "http://localhost:3002/api/chaos" -Method Post -ContentType "application/json" -Body '{"enabled": false}'
    ```
 
 ---
@@ -195,9 +195,9 @@ Mở sẵn 1 terminal PowerShell / Git Bash để copy nhanh các lệnh `curl` 
 > *Khi HCM phục hồi, tiến trình **Crash Recovery** của Coordinator sẽ tự động quét lại nhật ký giao dịch và hoàn tất Commit bù cho HCM, bảo toàn 100% dòng tiền!"*
 
 ### Thao tác demo:
-1. **Tiêm lỗi TIMEOUT ở Pha Commit trên HCM**:
-   ```bash
-   curl -X POST http://localhost:3002/api/chaos -H "Content-Type: application/json" -d "{\"enabled\": true, \"failurePoint\": \"COMMIT\", \"failureMode\": \"TIMEOUT\"}"
+1. **Tiêm lỗi TIMEOUT ở Pha Commit trên HCM (PowerShell)**:
+   ```powershell
+   Invoke-RestMethod -Uri "http://localhost:3002/api/chaos" -Method Post -ContentType "application/json" -Body '{"enabled": true, "failurePoint": "COMMIT", "failureMode": "TIMEOUT"}'
    ```
 2. **Thực hiện chuyển tiền**:
    - Nguồn: `HN-001` $\rightarrow$ Đích: `HCM-001`
@@ -207,18 +207,21 @@ Mở sẵn 1 terminal PowerShell / Git Bash để copy nhanh các lệnh `curl` 
    - Coordinator chờ quá 5000ms timeout của Axios.
    - Node HN đã Commit xong (trừ 500k).
    - Node HCM chưa nhận được Commit (chưa cộng 500k).
-   - Trạng thái giao dịch được Coordinator ghim chặt ở `COMMITTING` (không chuyển sang Abort).
+   - Trạng thái giao dịch được Coordinator ghim chặt ở `COMMITTING` (không chuyển sang Abort). App hiển thị **⏳ Giao dịch đang cam kết (COMMITTING)**.
 4. **Chứng minh Tiền không mất đi**:
    - Số tiền 500,000 VND này được định nghĩa chuẩn xác trong lý thuyết phân tán là **In-flight Amount** (Khoản tiền đang trung chuyển trên đường truyền mạng).
 5. **Kích hoạt Phục hồi (Recovery)**:
-   - Sửa lỗi mạng của HCM (Tắt chaos):
-     ```bash
-     curl -X POST http://localhost:3002/api/chaos -H "Content-Type: application/json" -d "{\"enabled\": false}"
+   - Sửa lỗi mạng của HCM (Tắt chaos - PowerShell):
+     ```powershell
+     Invoke-RestMethod -Uri "http://localhost:3002/api/chaos" -Method Post -ContentType "application/json" -Body '{"enabled": false}'
      ```
-   - Kích hoạt phục hồi bằng cách gọi API recover hoặc restart Coordinator (ở đây ta gọi script phục hồi tự động):
+   - Kích hoạt phục hồi cho giao dịch dở dang vừa thực hiện:
      ```bash
-     npm run test:recovery
+     npm run recover
      ```
+     *(Hoặc gọi API: `Invoke-RestMethod -Uri "http://localhost:3000/api/transfers/recover" -Method Post`, hoặc khởi động lại Coordinator để tiến trình Recovery tự động quét sau 5 giây).*
+     
+     > 💡 **Lưu ý quan trọng**: Lệnh `npm run test:recovery` là kịch bản kiểm thử độc lập tự động (script này tự tạo thêm 1 giao dịch kiểm thử mới 500k riêng để test). Để phục hồi chính giao dịch bạn vừa thực hiện trên App, hãy dùng lệnh `npm run recover` ở trên!
    - Quan sát log: Coordinator tìm thấy giao dịch `COMMITTING`, gửi lệnh commit bù sang HCM $\rightarrow$ Giao dịch chuyển thành công sang `COMMITTED`!
    - Số dư HCM được cộng thêm 500,000 VND. Tổng tài sản hệ thống khớp tuyệt đối!
 
@@ -426,14 +429,20 @@ npm run test:chaos
 # 3. Chạy test suite phục hồi sau sự cố
 npm run test:recovery
 
-# 4. Tiêm lỗi HCM từ chối Prepare (Rollback)
-curl -X POST http://localhost:3002/api/chaos -H "Content-Type: application/json" -d "{\"enabled\": true, \"failurePoint\": \"PREPARE\", \"failureMode\": \"REJECT\"}"
+# 4. Phục hồi các giao dịch dở dang (In-flight Recovery)
+npm run recover
 
-# 5. Tiêm lỗi HCM timeout Commit (Treo và phục hồi)
-curl -X POST http://localhost:3002/api/chaos -H "Content-Type: application/json" -d "{\"enabled\": true, \"failurePoint\": \"COMMIT\", \"failureMode\": \"TIMEOUT\"}"
+# 5. Tiêm lỗi HCM từ chối Prepare (Rollback) - PowerShell
+Invoke-RestMethod -Uri "http://localhost:3002/api/chaos" -Method Post -ContentType "application/json" -Body '{"enabled": true, "failurePoint": "PREPARE", "failureMode": "REJECT"}'
 
-# 6. Tắt toàn bộ lỗi (Reset về trạng thái bình thường)
-curl -X POST http://localhost:3002/api/chaos -H "Content-Type: application/json" -d "{\"enabled\": false}"
+# 6. Tiêm lỗi HCM timeout Commit (Treo và phục hồi) - PowerShell
+Invoke-RestMethod -Uri "http://localhost:3002/api/chaos" -Method Post -ContentType "application/json" -Body '{"enabled": true, "failurePoint": "COMMIT", "failureMode": "TIMEOUT"}'
+
+# 7. Tắt toàn bộ lỗi (Reset về trạng thái bình thường) - PowerShell
+Invoke-RestMethod -Uri "http://localhost:3002/api/chaos" -Method Post -ContentType "application/json" -Body '{"enabled": false}'
+
+# 8. Khôi phục số dư chuẩn ban đầu (80,000,000 VND)
+npm run reset
 ```
 
 ### 4.4. Các "Từ khóa vàng" (Golden Keywords) giúp ghi điểm cao

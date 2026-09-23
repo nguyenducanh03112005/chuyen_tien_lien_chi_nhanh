@@ -30,10 +30,10 @@ const ValidTransitions = {
   [States.PREPARED]: [States.COMMITTING, States.ABORTING, States.FAILED],
   [States.COMMITTING]: [States.COMMITTED, States.UNKNOWN],
   [States.ABORTING]: [States.ABORTED, States.UNKNOWN],
-  // Final states - no transitions out
-  [States.COMMITTED]: [],
-  [States.ABORTED]: [],
-  [States.FAILED]: [],
+  // Final states - no transitions out (allow self-transitions for idempotency)
+  [States.COMMITTED]: [States.COMMITTED],
+  [States.ABORTED]: [States.ABORTED],
+  [States.FAILED]: [States.FAILED],
   [States.UNKNOWN]: [States.COMMITTING, States.ABORTING] // For recovery
 };
 
@@ -97,6 +97,10 @@ class DistributedTransactionService {
     if (!transaction) throw new Error('TRANSACTION_NOT_FOUND');
 
     const currentState = transaction.status;
+    if (currentState === nextState) {
+      return transaction;
+    }
+
     const allowed = ValidTransitions[currentState] || [];
 
     if (!allowed.includes(nextState)) {
@@ -147,6 +151,8 @@ class DistributedTransactionService {
       transaction = this.transitionTransaction(transactionId, States.PREPARING);
     }
 
+    console.log(`[COORDINATOR] Phase 1 (Prepare): Broadcasting PREPARE for ${transactionId} to [${transaction.participants.map(p => p.branchId).join(', ')}]`);
+
     const preparePromises = transaction.participants.map(async (participant) => {
       const node = config.nodes.find(n => n.branchId === participant.branchId);
       if (!node) return { branchId: participant.branchId, vote: 'NO', reason: 'NODE_CONFIG_NOT_FOUND' };
@@ -160,9 +166,10 @@ class DistributedTransactionService {
           role: participant.role
         }, { timeout: 5000 });
 
+        console.log(`[COORDINATOR] Phase 1 (Prepare): Participant ${participant.branchId} voted -> ${response.data.vote}`);
         return { ...response.data, branchId: participant.branchId };
       } catch (error) {
-        console.error(`Prepare failed for ${participant.branchId}:`, error.message);
+        console.error(`[COORDINATOR] Phase 1 (Prepare): Participant ${participant.branchId} failed:`, error.message);
         return { branchId: participant.branchId, vote: 'NO', reason: 'NODE_UNAVAILABLE', message: error.message };
       }
     });
@@ -177,9 +184,11 @@ class DistributedTransactionService {
     const allYes = results.every(r => r.vote === 'YES');
 
     if (allYes) {
+      console.log(`[COORDINATOR] Phase 1 Result: All participants voted YES. Transitioning to PREPARED.`);
       // 2. PREPARING -> PREPARED
       return this.transitionTransaction(transactionId, States.PREPARED);
     } else {
+      console.log(`[COORDINATOR] Phase 1 Result: Vote NO detected. Global Decision = ABORT. Broadcasting ABORT...`);
       // 3. PREPARING -> ABORTING -> ABORTED
       this.setGlobalDecision(transactionId, 'ABORT');
       this.transitionTransaction(transactionId, States.ABORTING);
@@ -191,7 +200,7 @@ class DistributedTransactionService {
           try {
             await axios.post(`${node.url}/api/internal/transactions/${transactionId}/abort`, {}, { timeout: 2000 });
           } catch (e) {
-            console.error(`Failed to send abort to ${p.branchId}:`, e.message);
+            console.error(`[COORDINATOR] Failed to send abort to ${p.branchId}:`, e.message);
           }
         }
       }));
@@ -203,6 +212,11 @@ class DistributedTransactionService {
   async runCommitPhase(transactionId) {
     let transaction = repository.findById(transactionId);
     if (!transaction) throw new Error('TRANSACTION_NOT_FOUND');
+
+    // Idempotent: If already COMMITTED, return immediately
+    if (transaction.status === States.COMMITTED) {
+      return transaction;
+    }
 
     // Only commit if decision is null (first time) or already COMMIT
     if (transaction.decision === 'ABORT') {
@@ -219,6 +233,8 @@ class DistributedTransactionService {
       transaction = this.transitionTransaction(transactionId, States.COMMITTING);
     }
 
+    console.log(`[COORDINATOR] Phase 2 (Commit): Global Decision = COMMIT. Broadcasting COMMIT to [${transaction.participants.map(p => p.branchId).join(', ')}]`);
+
     const commitPromises = transaction.participants.map(async (participant) => {
       // Skip if already committed
       if (participant.status === ParticipantStatus.COMMITTED) return { branchId: participant.branchId, status: 'COMMITTED' };
@@ -226,9 +242,10 @@ class DistributedTransactionService {
       const node = config.nodes.find(n => n.branchId === participant.branchId);
       try {
         const response = await axios.post(`${node.url}/api/internal/transactions/${transactionId}/commit`, {}, { timeout: 5000 });
+        console.log(`[COORDINATOR] Phase 2 (Commit): Participant ${participant.branchId} committed successfully.`);
         return { ...response.data, branchId: participant.branchId };
       } catch (error) {
-        console.error(`Commit failed for ${participant.branchId}:`, error.message);
+        console.error(`[COORDINATOR] Phase 2 (Commit): Participant ${participant.branchId} failed:`, error.message);
         return { branchId: participant.branchId, status: 'UNKNOWN', message: error.message };
       }
     });
@@ -249,10 +266,10 @@ class DistributedTransactionService {
     const allCommitted = transaction.participants.every(p => p.status === ParticipantStatus.COMMITTED);
 
     if (allCommitted) {
+      console.log(`[COORDINATOR] Transaction ${transactionId} -> COMMITTED.`);
       return this.transitionTransaction(transactionId, States.COMMITTED);
     } else {
-      // Post-decision failure: Remains in COMMITTING or UNKNOWN
-      // In this PART, we leave it as COMMITTING so it can be recovered later.
+      console.warn(`[COORDINATOR] Transaction ${transactionId} incomplete (COMMITTING/UNKNOWN). Pending crash recovery.`);
       return transaction;
     }
   }
@@ -269,24 +286,32 @@ class DistributedTransactionService {
 
     if (unfinished.length === 0) {
       console.log('[RECOVERY] No unfinished transactions found.');
-      return;
+      return { recoveredCount: 0, transactions: [] };
     }
 
     console.log(`[RECOVERY] Found ${unfinished.length} unfinished transactions. Starting recovery...`);
 
+    const results = [];
     for (const tx of unfinished) {
       try {
-        await this.recoverTransaction(tx.transactionId);
+        const recovered = await this.recoverTransaction(tx.transactionId);
+        results.push(recovered);
       } catch (e) {
         console.error(`[RECOVERY] Failed to recover transaction ${tx.transactionId}:`, e.message);
       }
     }
-    console.log('[RECOVERY] Scan complete.');
+    console.log(`[RECOVERY] Scan complete. Recovered ${results.length} transactions.`);
+    return { recoveredCount: results.length, transactions: results };
   }
 
   async recoverTransaction(transactionId) {
     const tx = repository.findById(transactionId);
     if (!tx) throw new Error('TRANSACTION_NOT_FOUND');
+
+    // Idempotent: If already in final state, return as is
+    if (tx.status === States.COMMITTED || tx.status === States.ABORTED) {
+      return tx;
+    }
 
     console.log(`[RECOVERY] Recovering ${transactionId} (Global Decision: ${tx.decision}, Status: ${tx.status})...`);
 

@@ -3,22 +3,22 @@
     "id": "HN-001",
     "ownerName": "Nguyễn Văn A",
     "branchId": "HN",
-    "balance": 7888889,
+    "balance": 9000000,
     "currency": "VND",
     "status": "ACTIVE",
     "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-09-18T04:21:21.225Z",
+    "updatedAt": "2026-09-23T02:47:52.893Z",
     "reservedBalance": 0
   },
   {
     "id": "HN-002",
     "ownerName": "Trần Thị B",
     "branchId": "HN",
-    "balance": 26111111,
+    "balance": 25000000,
     "currency": "VND",
     "status": "ACTIVE",
     "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-09-18T04:21:21.253Z",
+    "updatedAt": "2026-09-23T02:47:52.896Z",
     "reservedBalance": 0
   }
 ]

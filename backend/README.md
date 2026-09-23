@@ -33,17 +33,17 @@ npm run node:dn
 
 ## API Endpoints (Coordinator)
 - `GET /api/health`: Health of coordinator.
-- `GET /api/nodes/health`: Health of all branch nodes.
+- `GET /api/health/nodes`: Health of all branch nodes.
 - `GET /api/branches`: List logical branches.
 - `GET /api/accounts`: Aggregate accounts from all online nodes.
 - `GET /api/accounts?branchId=HN`: Get accounts from HN node.
 - `GET /api/accounts/:id`: Get specific account (routed to correct node).
-- `POST /api/transfers`: Process local transfer (same-branch) or return 501 for cross-branch (future 2PC).
+- `POST /api/transfers`: Process same-branch transfers locally or coordinate cross-branch transfers with 2PC.
 
 ## Data Storage
 Each node has its own `data/accounts.json` file located in its respective folder under `nodes/`.
 
 ## Current Limitations
-- Cross-branch transfer is NOT implemented yet (waiting for 2PC).
-- Same-branch transfer is routed to the node and processed locally.
-- Transaction history is currently managed at the Coordinator level in `shared/data/transactions.json` or as per previous PART setup.
+- Persistence uses JSON files for teaching/demo purposes, not database transactions.
+- The Coordinator is a single point of coordination and 2PC can block while it is unavailable.
+- Internal and chaos endpoints are not hardened for production exposure.

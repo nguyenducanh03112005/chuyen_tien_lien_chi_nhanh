@@ -24,7 +24,9 @@ sealed class AccountUiState {
 sealed class TransferUiState {
     object Idle : TransferUiState()
     object Loading : TransferUiState()
-    data class Success(val transactionId: String) : TransferUiState()
+    data class Success(val transactionId: String, val message: String = "Tiền đã được chuyển thành công giữa các chi nhánh qua giao thức 2PC.") : TransferUiState()
+    data class Aborted(val transactionId: String, val message: String) : TransferUiState()
+    data class Pending(val transactionId: String, val message: String) : TransferUiState()
     data class Error(val message: String) : TransferUiState()
 }
 
@@ -196,7 +198,29 @@ class BankingViewModel : ViewModel() {
                 internalFetchAccounts(_selectedBranch.value)
                 internalFetchTransactions()
 
-                _transferUiState.value = TransferUiState.Success(response.transactionId)
+                when (response.status) {
+                    "COMMITTED", "COMPLETED" -> {
+                        _transferUiState.value = TransferUiState.Success(
+                            transactionId = response.transactionId,
+                            message = "Tiền đã được chuyển thành công giữa các chi nhánh qua giao thức 2PC."
+                        )
+                    }
+                    "ABORTED" -> {
+                        _transferUiState.value = TransferUiState.Aborted(
+                            transactionId = response.transactionId,
+                            message = "Chi nhánh tham gia đã từ chối ở Pha 1 (Prepare).\nQuyết định toàn cục: ABORT (Rollback).\nSố dư và tiền phong tỏa đã được phục hồi nguyên vẹn."
+                        )
+                    }
+                    "COMMITTING", "UNKNOWN" -> {
+                        _transferUiState.value = TransferUiState.Pending(
+                            transactionId = response.transactionId,
+                            message = "Sự cố gián đoạn mạng ở Pha 2 (Commit). Quyết định COMMIT đã được lưu bền vững.\nKhoản tiền đang ở trạng thái In-flight.\nHệ thống sẽ tự động hoàn tất qua tiến trình Crash Recovery."
+                        )
+                    }
+                    else -> {
+                        _transferUiState.value = TransferUiState.Error("Trạng thái giao dịch: ${response.status}")
+                    }
+                }
             } catch (e: Exception) {
                 _transferUiState.value = TransferUiState.Error(e.message ?: "Transfer failed")
             }
