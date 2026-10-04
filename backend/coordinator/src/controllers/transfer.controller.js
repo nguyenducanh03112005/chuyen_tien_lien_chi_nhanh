@@ -2,6 +2,7 @@ const axios = require('axios');
 const config = require('../config');
 const accountController = require('./account.controller');
 const distributedTransactionService = require('../services/distributedTransaction.service');
+const { parseAmount } = require('../../../shared/src/utils/amount');
 
 const createTransfer = async (req, res) => {
   const idempotencyKey = req.headers['idempotency-key'];
@@ -9,6 +10,14 @@ const createTransfer = async (req, res) => {
 
   if (!idempotencyKey) {
     return res.status(400).json({ success: false, message: 'Missing Idempotency-Key header' });
+  }
+
+  const parsedAmount = parseAmount(amount);
+  if (parsedAmount === null) {
+    return res.status(400).json({ success: false, message: 'Amount must be a positive whole number' });
+  }
+  if (currency !== 'VND') {
+    return res.status(400).json({ success: false, message: 'Unsupported currency' });
   }
 
   const sourceBranch = accountController.getBranchIdFromAccountId(sourceAccountId);
@@ -43,7 +52,7 @@ const createTransfer = async (req, res) => {
       destinationAccountId,
       sourceBranchId: sourceBranch,
       destinationBranchId: destBranch,
-      amount: parseInt(amount),
+      amount: parsedAmount,
       currency
     });
 

@@ -18,7 +18,7 @@ class TransferService {
       throw new Error('SAME_ACCOUNT_TRANSFER');
     }
 
-    if (amount <= 0) {
+    if (!Number.isSafeInteger(amount) || amount <= 0) {
       throw new Error('INVALID_AMOUNT');
     }
 
@@ -35,7 +35,9 @@ class TransferService {
     if (sourceAcc.status !== 'ACTIVE') throw new Error('SOURCE_ACCOUNT_INACTIVE');
     if (destAcc.status !== 'ACTIVE') throw new Error('DESTINATION_ACCOUNT_INACTIVE');
 
-    if (sourceAcc.balance < amount) {
+    // Funds reserved by an in-flight 2PC transaction are not spendable.
+    const available = sourceAcc.balance - (sourceAcc.reservedBalance || 0);
+    if (available < amount) {
       throw new Error('INSUFFICIENT_BALANCE');
     }
 
@@ -43,13 +45,10 @@ class TransferService {
     const transactionId = `TX-${uuidv4().substring(0, 8).toUpperCase()}`;
 
     try {
-      // Debit source
+      // Debit source and credit destination in one write
       sourceAcc.balance -= amount;
-      accountRepository.save(sourceAcc);
-
-      // Credit destination
       destAcc.balance += amount;
-      accountRepository.save(destAcc);
+      accountRepository.saveAll([sourceAcc, destAcc]);
 
       // 4. Persist transaction
       const transactionRecord = {
@@ -66,24 +65,8 @@ class TransferService {
       return transactionRepository.save(transactionRecord);
     } catch (error) {
       console.error('Transfer failed:', error);
-      // In a real database we'd use a transaction rollback.
-      // Here, we'd need manual compensation if one save succeeded and the other didn't.
-      // For this PART, we assume file write atomicity or simple sequential writes.
       throw new Error('TRANSFER_EXECUTION_FAILED');
     }
-  }
-
-  // Maintaining old method name for compatibility during refactor if needed,
-  // but we will move to performLocalTransfer
-  createMockTransfer(sourceAccountId, destinationAccountId, amount, currency) {
-    return {
-      transactionId: `TX-${uuidv4().substring(0, 8).toUpperCase()}`,
-      status: 'PREPARING',
-      sourceAccountId,
-      destinationAccountId,
-      amount,
-      currency
-    };
   }
 }
 

@@ -1,6 +1,7 @@
 const accountRepository = require('../repositories/account.repository');
 const participantTxRepository = require('../repositories/participantTransaction.repository');
 const chaosService = require('./chaos.service');
+const { parseAmount } = require('../utils/amount');
 
 class TwoPhaseCommitService {
   async prepare(transactionId, data) {
@@ -11,6 +12,10 @@ class TwoPhaseCommitService {
     await chaosService.applyFailure('PREPARE', `Node ${branchId} preparing ${transactionId}`);
     const existing = participantTxRepository.findById(transactionId);
     if (existing) {
+      // Aborted earlier (possibly before this PREPARE arrived): never vote YES
+      if (existing.status === 'ABORTED') {
+        return { vote: 'NO', reason: 'ALREADY_ABORTED' };
+      }
       // If already prepared with different data, reject
       if (existing.amount !== amount || existing.role !== role) {
         return { vote: 'NO', reason: 'CONFLICTING_PREPARE_DATA' };
@@ -19,6 +24,9 @@ class TwoPhaseCommitService {
     }
 
     // 2. Validation
+    if (parseAmount(amount) !== amount) return { vote: 'NO', reason: 'INVALID_AMOUNT' };
+    if (role !== 'SOURCE' && role !== 'DESTINATION') return { vote: 'NO', reason: 'INVALID_ROLE' };
+
     const accountId = role === 'SOURCE' ? sourceAccountId : destinationAccountId;
     const account = accountRepository.findById(accountId);
 
@@ -65,7 +73,17 @@ class TwoPhaseCommitService {
   // Abort logic (needed if Prepare fails globally)
   async abort(transactionId) {
     const participantTx = participantTxRepository.findById(transactionId);
-    if (!participantTx) return { status: 'ABORTED', message: 'NOT_FOUND' };
+    if (!participantTx) {
+      // Record a tombstone so a delayed PREPARE for this transaction votes NO
+      // instead of reserving funds that nobody will ever release.
+      participantTxRepository.save({
+        transactionId,
+        branchId: process.env.BRANCH_ID,
+        status: 'ABORTED',
+        reservedAmount: 0
+      });
+      return { status: 'ABORTED', message: 'NOT_FOUND' };
+    }
 
     if (participantTx.status === 'COMMITTED') {
       throw new Error('CANNOT_ABORT_COMMITTED_TRANSACTION');

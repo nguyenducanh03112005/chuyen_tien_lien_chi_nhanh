@@ -38,6 +38,22 @@ class AccountRepository {
     return this.findById(account.id);
   }
 
+  // Update several existing accounts in a single file write, so a transfer's
+  // debit and credit are persisted together or not at all.
+  saveAll(updatedAccounts) {
+    const accounts = this.findAll();
+    const now = new Date().toISOString();
+
+    updatedAccounts.forEach(account => {
+      const index = accounts.findIndex(acc => acc.id === account.id);
+      if (index === -1) throw new Error('ACCOUNT_NOT_FOUND');
+      accounts[index] = { ...accounts[index], ...account, updatedAt: now };
+    });
+
+    writeData(FILE_NAME, accounts);
+    return updatedAccounts.map(account => this.findById(account.id));
+  }
+
   delete(id) {
     const accounts = this.findAll();
     const filtered = accounts.filter(acc => acc.id !== id);

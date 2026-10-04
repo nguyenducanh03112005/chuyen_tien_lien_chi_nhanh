@@ -1,5 +1,6 @@
 const transferService = require('../services/transfer.service');
 const transactionRepository = require('../repositories/transaction.repository');
+const { parseAmount } = require('../utils/amount');
 
 const createTransfer = async (req, res) => {
   const idempotencyKey = req.headers['idempotency-key'];
@@ -23,7 +24,7 @@ const createTransfer = async (req, res) => {
     const result = await transferService.performLocalTransfer(idempotencyKey, {
       sourceAccountId,
       destinationAccountId,
-      amount: parseInt(amount),
+      amount: parseAmount(amount),
       currency
     });
 
@@ -71,6 +72,7 @@ function getFriendlyMessage(code) {
     'INSUFFICIENT_BALANCE': 'Số dư không đủ',
     'SAME_ACCOUNT_TRANSFER': 'Không thể chuyển tiền cho chính mình',
     'INVALID_AMOUNT': 'Số tiền không hợp lệ',
+    'UNSUPPORTED_CURRENCY': 'Loại tiền tệ không được hỗ trợ',
     'SOURCE_ACCOUNT_INACTIVE': 'Tài khoản nguồn đang bị khóa',
     'DESTINATION_ACCOUNT_INACTIVE': 'Tài khoản nhận đang bị khóa'
   };
