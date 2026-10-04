@@ -7,6 +7,7 @@ const getBranchUrl = (branchId) => {
 };
 
 const getBranchIdFromAccountId = (accountId) => {
+  if (typeof accountId !== 'string') return null;
   if (accountId.startsWith('HN-')) return 'HN';
   if (accountId.startsWith('HCM-')) return 'HCM';
   if (accountId.startsWith('DN-')) return 'DN';

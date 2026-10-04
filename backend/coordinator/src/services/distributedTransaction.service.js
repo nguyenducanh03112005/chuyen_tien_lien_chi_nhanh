@@ -167,10 +167,13 @@ class DistributedTransactionService {
         }, { timeout: 5000 });
 
         console.log(`[COORDINATOR] Phase 1 (Prepare): Participant ${participant.branchId} voted -> ${response.data.vote}`);
-        return { ...response.data, branchId: participant.branchId };
+        return { ...response.data, branchId: participant.branchId, definitelyNotPrepared: response.data.vote !== 'YES' };
       } catch (error) {
         console.error(`[COORDINATOR] Phase 1 (Prepare): Participant ${participant.branchId} failed:`, error.message);
-        return { branchId: participant.branchId, vote: 'NO', reason: 'NODE_UNAVAILABLE', message: error.message };
+        // An error response (e.g. 500) or a refused connection means the node did not
+        // prepare. A timeout is ambiguous: the node may still have reserved funds.
+        const definitelyNotPrepared = Boolean(error.response) || error.code === 'ECONNREFUSED';
+        return { branchId: participant.branchId, vote: 'NO', reason: 'NODE_UNAVAILABLE', message: error.message, definitelyNotPrepared };
       }
     });
 
@@ -189,23 +192,11 @@ class DistributedTransactionService {
       return this.transitionTransaction(transactionId, States.PREPARED);
     } else {
       console.log(`[COORDINATOR] Phase 1 Result: Vote NO detected. Global Decision = ABORT. Broadcasting ABORT...`);
-      // 3. PREPARING -> ABORTING -> ABORTED
+      // 3. PREPARING -> ABORTING -> ABORTED (once every participant that may hold a reservation acks)
       this.setGlobalDecision(transactionId, 'ABORT');
       this.transitionTransaction(transactionId, States.ABORTING);
-
-      // Send Abort to all participants that might have prepared (best effort for this PART)
-      await Promise.all(transaction.participants.map(async (p) => {
-        const node = config.nodes.find(n => n.branchId === p.branchId);
-        if (node) {
-          try {
-            await axios.post(`${node.url}/api/internal/transactions/${transactionId}/abort`, {}, { timeout: 2000 });
-          } catch (e) {
-            console.error(`[COORDINATOR] Failed to send abort to ${p.branchId}:`, e.message);
-          }
-        }
-      }));
-
-      return this.transitionTransaction(transactionId, States.ABORTED);
+      const notPrepared = results.filter(r => r.definitelyNotPrepared).map(r => r.branchId);
+      return this.runAbortPhase(transactionId, notPrepared);
     }
   }
 
@@ -281,7 +272,9 @@ class DistributedTransactionService {
       tx.status === States.COMMITTING ||
       tx.status === States.UNKNOWN ||
       tx.status === States.ABORTING ||
-      (tx.status === States.PREPARED && tx.decision !== null)
+      tx.status === States.PREPARED ||
+      tx.status === States.PREPARING ||
+      tx.status === States.CREATED
     );
 
     if (unfinished.length === 0) {
@@ -321,36 +314,19 @@ class DistributedTransactionService {
       // Implement runAbortPhase if needed, or similar logic
       return await this.runAbortPhase(transactionId);
     } else {
-      // No decision yet? If it's old and stuck in PREPARING, we might want to abort it
-      if (tx.status === States.PREPARING || tx.status === States.CREATED) {
-        console.log(`[RECOVERY] Aborting undecided transaction ${transactionId}`);
-        return await this.abortUndecidedTransaction(transactionId);
-      }
+      // No decision was ever recorded, so no participant can have committed:
+      // presumed abort releases any reservations made during PREPARE.
+      console.log(`[RECOVERY] Aborting undecided transaction ${transactionId}`);
+      this.setGlobalDecision(transactionId, 'ABORT');
+      return await this.runAbortPhase(transactionId);
     }
   }
 
-  async abortUndecidedTransaction(transactionId) {
-    this.setGlobalDecision(transactionId, 'ABORT');
-    this.transitionTransaction(transactionId, States.ABORTING);
-
-    const tx = repository.findById(transactionId);
-    await Promise.all(tx.participants.map(async (p) => {
-      const node = config.nodes.find(n => n.branchId === p.branchId);
-      if (node) {
-        try {
-          await axios.post(`${node.url}/api/internal/transactions/${transactionId}/abort`, {}, { timeout: 2000 });
-          this.updateParticipantStatus(transactionId, p.branchId, ParticipantStatus.ABORTED);
-        } catch (e) {
-          console.error(`[RECOVERY] Failed to send abort to ${p.branchId}:`, e.message);
-        }
-      }
-    }));
-
-    return this.transitionTransaction(transactionId, States.ABORTED);
-  }
-
-  // Explicit Abort phase for recovery
-  async runAbortPhase(transactionId) {
+  // Send ABORT to every participant until each one acknowledges. Participants listed in
+  // `notPrepared` never reserved funds, so they need no acknowledgement. The transaction
+  // only becomes ABORTED once all participants are accounted for; otherwise it stays
+  // ABORTING and crash recovery retries it.
+  async runAbortPhase(transactionId, notPrepared = []) {
     let tx = repository.findById(transactionId);
     if (tx.status === States.ABORTED) return tx;
 
@@ -361,12 +337,15 @@ class DistributedTransactionService {
     await Promise.all(tx.participants.map(async (p) => {
       if (p.status === ParticipantStatus.ABORTED) return;
       const node = config.nodes.find(n => n.branchId === p.branchId);
-      if (node) {
-        try {
-          await axios.post(`${node.url}/api/internal/transactions/${transactionId}/abort`, {}, { timeout: 2000 });
+      try {
+        if (!node) throw new Error('NODE_CONFIG_NOT_FOUND');
+        await axios.post(`${node.url}/api/internal/transactions/${transactionId}/abort`, {}, { timeout: 2000 });
+        this.updateParticipantStatus(transactionId, p.branchId, ParticipantStatus.ABORTED);
+      } catch (e) {
+        if (notPrepared.includes(p.branchId)) {
           this.updateParticipantStatus(transactionId, p.branchId, ParticipantStatus.ABORTED);
-        } catch (e) {
-          console.error(`[RECOVERY] Failed to send abort to ${p.branchId}:`, e.message);
+        } else {
+          console.error(`[COORDINATOR] Failed to send abort to ${p.branchId}:`, e.message);
         }
       }
     }));
@@ -376,6 +355,7 @@ class DistributedTransactionService {
     if (allAborted) {
       return this.transitionTransaction(transactionId, States.ABORTED);
     }
+    console.warn(`[COORDINATOR] Transaction ${transactionId} still ABORTING. Pending crash recovery.`);
     return tx;
   }
 }

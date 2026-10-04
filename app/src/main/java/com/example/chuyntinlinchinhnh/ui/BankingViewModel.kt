@@ -217,6 +217,12 @@ class BankingViewModel : ViewModel() {
                             message = "Sự cố gián đoạn mạng ở Pha 2 (Commit). Quyết định COMMIT đã được lưu bền vững.\nKhoản tiền đang ở trạng thái In-flight.\nHệ thống sẽ tự động hoàn tất qua tiến trình Crash Recovery."
                         )
                     }
+                    "ABORTING" -> {
+                        _transferUiState.value = TransferUiState.Pending(
+                            transactionId = response.transactionId,
+                            message = "Quyết định toàn cục: ABORT. Tiền chưa bị trừ.\nMột chi nhánh chưa xác nhận hủy, khoản tạm giữ sẽ được giải phóng qua tiến trình Crash Recovery."
+                        )
+                    }
                     else -> {
                         _transferUiState.value = TransferUiState.Error("Trạng thái giao dịch: ${response.status}")
                     }

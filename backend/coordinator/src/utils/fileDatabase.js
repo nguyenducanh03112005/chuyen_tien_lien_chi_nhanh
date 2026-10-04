@@ -20,11 +20,17 @@ const readData = (fileName) => {
 const writeData = (fileName, data) => {
   const filePath = path.join(DATA_DIR, fileName);
   try {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+    // Write to a temp file then rename, so a crash mid-write never leaves a
+    // truncated JSON file behind (rename is atomic on the same filesystem).
+    const tmpPath = `${filePath}.${process.pid}.tmp`;
+    fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf8');
+    fs.renameSync(tmpPath, filePath);
     return true;
   } catch (error) {
+    // Surface write failures: callers (e.g. a 2PC vote) must not report
+    // success for state that was never persisted.
     console.error(`Error writing ${fileName}:`, error);
-    return false;
+    throw error;
   }
 };
 
