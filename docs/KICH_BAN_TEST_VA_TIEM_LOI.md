@@ -1,229 +1,109 @@
-# Kịch bản test và lệnh tiêm lỗi
+# Kịch bản kiểm thử và lệnh tiêm lỗi
 
-## 0. Chuẩn bị
+## 1. Chuẩn bị môi trường
 
 ```powershell
 cd backend
+npm install
 npm run reset
 npm run start:all
 ```
 
-Các địa chỉ:
+Service: Coordinator `3000`, HN `3001`, HCM `3002`, DN `3003`.
 
-```text
-Coordinator: http://localhost:3000
-HN:         http://localhost:3001
-HCM:        http://localhost:3002
-DN:         http://localhost:3003
-```
-
-Tắt toàn bộ lỗi trước mỗi ca:
+Tắt chaos trước mỗi ca:
 
 ```powershell
 3001,3002,3003 | ForEach-Object {
-  Invoke-RestMethod -Uri "http://localhost:$($_)/api/chaos" -Method Post `
+  Invoke-RestMethod "http://localhost:$($_)/api/chaos" -Method Post `
     -ContentType "application/json" -Body '{"enabled":false,"failurePoint":"NONE","failureMode":"REJECT"}'
 }
 ```
 
-## 1. Test chuyển tiền thành công — Happy Path
-
-### Thực hiện
+## 2. Happy Path
 
 ```powershell
-$key = "test-happy-$(Get-Date -Format yyyyMMddHHmmssfff)"
-Invoke-RestMethod -Uri "http://localhost:3000/api/transfers" -Method Post `
+$key = "happy-$(Get-Date -Format yyyyMMddHHmmssfff)"
+Invoke-RestMethod "http://localhost:3000/api/transfers" -Method Post `
   -Headers @{"Idempotency-Key"=$key} -ContentType "application/json" `
   -Body '{"sourceAccountId":"HN-001","destinationAccountId":"HCM-001","amount":100000,"currency":"VND"}'
 ```
 
-### Kỳ vọng
+Kỳ vọng: `COMMITTED`, HN giảm tiền, HCM tăng tiền, tổng tiền không đổi.
 
-- HTTP thành công.
-- Trạng thái giao dịch: `COMMITTED`.
-- `HN-001` giảm `100000`, `HCM-001` tăng `100000`.
-- Tổng tiền toàn hệ thống không đổi.
-
-## 2. Test lỗi PREPARE — HCM từ chối vote
-
-### Tiêm lỗi
+## 3. Prepare Reject
 
 ```powershell
-Invoke-RestMethod -Uri "http://localhost:3002/api/chaos" -Method Post `
+Invoke-RestMethod "http://localhost:3002/api/chaos" -Method Post `
   -ContentType "application/json" `
   -Body '{"enabled":true,"failurePoint":"PREPARE","failureMode":"REJECT"}'
 ```
 
-### Thực hiện
+Gửi giao dịch HN-002 → HCM-002 với số tiền `50000` và key mới.
+
+Kỳ vọng: HCM trả `NO`, Coordinator gửi `ABORT`, giao dịch `ABORTED`, reservation của HN được giải phóng, tổng tiền không đổi.
+
+Tắt lỗi:
 
 ```powershell
-$key = "test-prepare-reject-$(Get-Date -Format yyyyMMddHHmmssfff)"
-Invoke-RestMethod -Uri "http://localhost:3000/api/transfers" -Method Post `
-  -Headers @{"Idempotency-Key"=$key} -ContentType "application/json" `
-  -Body '{"sourceAccountId":"HN-002","destinationAccountId":"HCM-002","amount":50000,"currency":"VND"}'
-```
-
-### Kỳ vọng
-
-- HCM trả vote `NO` ở pha `PREPARE`.
-- Trạng thái giao dịch: `ABORTED`.
-- Tiền tạm giữ ở HN được giải phóng.
-- Số dư nguồn và đích không thay đổi.
-- Tổng tiền toàn hệ thống không đổi.
-
-### Tắt lỗi
-
-```powershell
-Invoke-RestMethod -Uri "http://localhost:3002/api/chaos" -Method Post `
+Invoke-RestMethod "http://localhost:3002/api/chaos" -Method Post `
   -ContentType "application/json" -Body '{"enabled":false}'
 ```
 
-## 3. Test lỗi COMMIT — HCM timeout
-
-### Tiêm lỗi
+## 4. Commit Timeout
 
 ```powershell
-Invoke-RestMethod -Uri "http://localhost:3002/api/chaos" -Method Post `
+Invoke-RestMethod "http://localhost:3002/api/chaos" -Method Post `
   -ContentType "application/json" `
   -Body '{"enabled":true,"failurePoint":"COMMIT","failureMode":"TIMEOUT"}'
 ```
 
-### Thực hiện
+Gửi giao dịch HN-001 → HCM-001 với số tiền `10000` và key mới.
+
+Kỳ vọng: trạng thái `COMMITTING` hoặc `UNKNOWN`; không rollback participant đã commit; tiền còn thiếu được xem là in-flight.
+
+## 5. Recovery
+
+Tắt chaos rồi phục hồi:
 
 ```powershell
-$key = "test-commit-timeout-$(Get-Date -Format yyyyMMddHHmmssfff)"
-$tx = Invoke-RestMethod -Uri "http://localhost:3000/api/transfers" -Method Post `
-  -Headers @{"Idempotency-Key"=$key} -ContentType "application/json" `
-  -Body '{"sourceAccountId":"HN-001","destinationAccountId":"HCM-001","amount":10000,"currency":"VND"}'
-$tx
-```
-
-### Kỳ vọng
-
-- HN có thể đã commit, HCM timeout ở pha `COMMIT`.
-- Trạng thái giao dịch: `COMMITTING` hoặc `UNKNOWN`.
-- Không được rollback HN.
-- Không có mất hoặc tạo thêm tiền; khoản tiền đang xử lý được xem là `in-flight`.
-
-## 4. Test crash recovery cho giao dịch COMMITTING
-
-### Tắt lỗi
-
-```powershell
-Invoke-RestMethod -Uri "http://localhost:3002/api/chaos" -Method Post `
+Invoke-RestMethod "http://localhost:3002/api/chaos" -Method Post `
   -ContentType "application/json" -Body '{"enabled":false}'
-```
-
-### Phục hồi theo mã giao dịch
-
-```powershell
-Invoke-RestMethod -Uri "http://localhost:3000/api/transfers/$($tx.transactionId)/recover" -Method Post
-```
-
-### Hoặc quét toàn bộ giao dịch dở dang
-
-```powershell
 npm run recover
 ```
 
-### Kỳ vọng
-
-- Participant HCM được commit bù.
-- Trạng thái giao dịch: `COMMITTED`.
-- Tổng tiền toàn hệ thống bằng tổng tiền trước khi test.
-
-## 5. Test idempotency — gửi lại cùng một yêu cầu
-
-### Thực hiện
+Hoặc phục hồi một transaction:
 
 ```powershell
-$key = "test-idempotency-$(Get-Date -Format yyyyMMddHHmmssfff)"
+Invoke-RestMethod "http://localhost:3000/api/transfers/{transactionId}/recover" -Method Post
+```
+
+Kỳ vọng: participant còn thiếu nhận commit bù, transaction thành `COMMITTED`, tổng tiền khớp baseline.
+
+## 6. Idempotency
+
+Gửi cùng body hai lần với cùng header `Idempotency-Key`.
+
+```powershell
+$key = "idem-$(Get-Date -Format yyyyMMddHHmmssfff)"
 $body = '{"sourceAccountId":"DN-001","destinationAccountId":"HN-001","amount":100,"currency":"VND"}'
-
-$first = Invoke-RestMethod -Uri "http://localhost:3000/api/transfers" -Method Post `
-  -Headers @{"Idempotency-Key"=$key} -ContentType "application/json" -Body $body
-
-$second = Invoke-RestMethod -Uri "http://localhost:3000/api/transfers" -Method Post `
-  -Headers @{"Idempotency-Key"=$key} -ContentType "application/json" -Body $body
-
-$first
-$second
+Invoke-RestMethod "http://localhost:3000/api/transfers" -Method Post -Headers @{"Idempotency-Key"=$key} -ContentType "application/json" -Body $body
+Invoke-RestMethod "http://localhost:3000/api/transfers" -Method Post -Headers @{"Idempotency-Key"=$key} -ContentType "application/json" -Body $body
 ```
 
-### Kỳ vọng
+Kỳ vọng: hai phản hồi trỏ tới cùng transaction và tiền chỉ thay đổi một lần.
 
-- Hai phản hồi trả về cùng một giao dịch.
-- Chỉ tạo một giao dịch thực tế.
-- Tiền chỉ bị trừ/cộng một lần.
-- Trạng thái giao dịch: `COMMITTED`.
+## 7. Kiểm thử lỗi đầu vào
 
-## 6. Test thiếu Idempotency-Key
+Kiểm tra các trường hợp: thiếu `Idempotency-Key`, cùng tài khoản nguồn/đích, amount bằng 0 hoặc âm, currency không hỗ trợ, tài khoản không tồn tại và không đủ số dư.
 
-```powershell
-Invoke-RestMethod -Uri "http://localhost:3000/api/transfers" -Method Post `
-  -ContentType "application/json" `
-  -Body '{"sourceAccountId":"HN-001","destinationAccountId":"HCM-001","amount":100000,"currency":"VND"}'
-```
+Kỳ vọng: API trả lỗi `4xx`, không tạo giao dịch thành công và không thay đổi số dư.
 
-### Kỳ vọng
-
-- HTTP `400`.
-- Mã lỗi: `MISSING_IDEMPOTENCY_KEY`.
-- Không tạo giao dịch và không thay đổi số dư.
-
-## 7. Test dữ liệu chuyển tiền không hợp lệ
-
-### Cùng tài khoản nguồn và đích
+## 8. Bộ test tự động
 
 ```powershell
-$key = "test-same-account-$(Get-Date -Format yyyyMMddHHmmssfff)"
-Invoke-RestMethod -Uri "http://localhost:3000/api/transfers" -Method Post `
-  -Headers @{"Idempotency-Key"=$key} -ContentType "application/json" `
-  -Body '{"sourceAccountId":"HN-001","destinationAccountId":"HN-001","amount":100,"currency":"VND"}'
-```
-
-### Số tiền không hợp lệ
-
-```powershell
-$key = "test-invalid-amount-$(Get-Date -Format yyyyMMddHHmmssfff)"
-Invoke-RestMethod -Uri "http://localhost:3000/api/transfers" -Method Post `
-  -Headers @{"Idempotency-Key"=$key} -ContentType "application/json" `
-  -Body '{"sourceAccountId":"HN-001","destinationAccountId":"HCM-001","amount":0,"currency":"VND"}'
-```
-
-### Không đủ số dư
-
-```powershell
-$key = "test-insufficient-balance-$(Get-Date -Format yyyyMMddHHmmssfff)"
-Invoke-RestMethod -Uri "http://localhost:3000/api/transfers" -Method Post `
-  -Headers @{"Idempotency-Key"=$key} -ContentType "application/json" `
-  -Body '{"sourceAccountId":"HN-001","destinationAccountId":"HCM-001","amount":999999999999,"currency":"VND"}'
-```
-
-### Kỳ vọng chung
-
-- HTTP lỗi `4xx` với mã lỗi tương ứng.
-- Không tạo giao dịch thành công.
-- Không thay đổi số dư.
-
-## 8. Chạy toàn bộ test tự động
-
-```powershell
-cd backend
 npm run test:chaos
-```
-
-Kỳ vọng: các ca Happy Path, PREPARE Reject, COMMIT Timeout/Recovery và Idempotency đều đạt `PASS`.
-
-```powershell
 npm run test:recovery
 ```
 
-Kỳ vọng: giao dịch timeout được phục hồi thành `COMMITTED`, recovery lặp lại không làm thay đổi kết quả, tổng tiền được bảo toàn.
-
-## 9. Dọn trạng thái sau kiểm thử
-
-```powershell
-cd backend
-npm run reset
-```
+Kỳ vọng: các test in `PASS`, giao dịch lỗi được phục hồi đúng và tổng tiền được bảo toàn.
