@@ -48,3 +48,5 @@ Android Studio and run the `app` module.
 | `.ai-context/` | Specification documents |
 
 See [`backend/README.md`](backend/README.md) for API endpoints and known limitations.
+
+See [`ROADMAP.md`](ROADMAP.md) for the remaining work to complete the project.
