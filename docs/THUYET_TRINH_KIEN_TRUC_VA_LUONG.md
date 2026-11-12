@@ -161,22 +161,7 @@ stateDiagram-v2
 - **Recovery:** Coordinator đọc quyết định đã lưu và gửi lại lệnh còn thiếu. Participant đã hoàn tất có thể xác nhận trạng thái đã xử lý; participant chưa hoàn tất tiếp tục thực hiện theo quyết định toàn cục.
 - **Idempotency:** Coordinator tra cứu `Idempotency-Key`. Cùng key trả về cùng giao dịch thay vì tạo thêm transaction mới, tránh xử lý giao dịch lặp khi client retry.
 
-## 6. Gợi ý bố cục slide
-
-1. **Bài toán:** Vì sao chuyển tiền giữa hai dữ liệu chi nhánh có thể bị cập nhật một phần?
-2. **Kiến trúc:** Android, Coordinator, ba Branch Node và dữ liệu riêng từng node.
-3. **Luồng giao dịch:** Phân biệt giao dịch cùng chi nhánh với giao dịch liên chi nhánh.
-4. **2PC và giữ tiền:** Giải thích Prepare, reservation, Commit và Abort.
-5. **Chịu lỗi:** Timeout không phải lúc nào cũng là thất bại; trình bày trạng thái in-flight và recovery.
-6. **Kết luận và giới hạn:** Nêu các cơ chế bảo vệ, sau đó nhấn mạnh đây là prototype dùng JSON.
-
-## 7. Lời dẫn thuyết trình mẫu
-
-> “Hệ thống mô phỏng chuyển tiền giữa các chi nhánh có dữ liệu độc lập. Android gửi yêu cầu đến Coordinator; Coordinator xác định giao dịch nội bộ hay liên chi nhánh. Với giao dịch liên chi nhánh, hệ thống dùng Two-Phase Commit. Ở pha Prepare, node nguồn kiểm tra số dư và giữ khoản tiền cần chuyển, còn node đích xác nhận tài khoản nhận. Nếu tất cả participant đồng ý, Coordinator lưu quyết định Commit rồi yêu cầu node nguồn ghi nợ và node đích ghi có. Nếu có bên từ chối, Coordinator quyết định Abort và giải phóng khoản tiền giữ. Nếu mất kết nối khi Commit, giao dịch được giữ ở trạng thái chưa hoàn tất và recovery tiếp tục theo quyết định đã lưu, thay vì tự ý rollback.”
-
-**Thông điệp kết luận:** Coordinator điều phối; mỗi Branch Node sở hữu dữ liệu chi nhánh; 2PC phối hợp cập nhật; reservation, idempotency và recovery hỗ trợ bảo toàn tính nhất quán khi có lỗi.
-
-## 8. Phạm vi và giới hạn của bản demo
+## 6. Phạm vi và giới hạn của bản demo
 
 - Dữ liệu dùng file JSON, không thay thế database có transaction và cơ chế khóa phù hợp tải đồng thời.
 - Coordinator là một điểm điều phối đơn; nếu Coordinator ngừng hoạt động, việc điều phối và recovery bị ảnh hưởng.
