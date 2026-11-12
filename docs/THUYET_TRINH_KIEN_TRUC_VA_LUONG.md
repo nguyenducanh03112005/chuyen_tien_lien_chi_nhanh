@@ -41,28 +41,52 @@ flowchart LR
 
 Coordinator là nơi điều phối chứ không trực tiếp sửa số dư trong dữ liệu của các node.
 
+### Lời thuyết trình
+
+> “Sơ đồ kiến trúc gồm ứng dụng Android, một Coordinator và ba node đại diện cho các chi nhánh Hà Nội, TP. Hồ Chí Minh và Đà Nẵng. Ứng dụng Android là nơi người dùng nhập và theo dõi giao dịch; mọi yêu cầu đều gửi đến Coordinator qua REST API. Coordinator chạy ở cổng 3000, chịu trách nhiệm định tuyến yêu cầu và điều phối giao dịch giữa các node. Mỗi Branch Node chạy ở cổng riêng và tự quản lý dữ liệu tài khoản của chi nhánh mình. Vì vậy, Coordinator không trực tiếp sửa số dư; với giao dịch liên chi nhánh, nó gửi các lệnh Prepare, Commit hoặc Abort đến những node liên quan. Transaction log ở Coordinator và trạng thái participant tại các node giúp hệ thống theo dõi giao dịch, đặc biệt khi cần phục hồi sau lỗi.”
+
 ## 3. Luồng dữ liệu tổng quát
 
 ```mermaid
-flowchart TD
-    A[App gửi yêu cầu chuyển tiền] --> B[Coordinator kiểm tra dữ liệu<br/>và Idempotency-Key]
-    B --> C{Nguồn và đích<br/>cùng chi nhánh?}
-    C -->|Có| D[Chuyển yêu cầu đến node sở hữu tài khoản]
-    D --> E[Node kiểm tra và cập nhật<br/>ghi nợ + ghi có cục bộ]
+flowchart LR
+    subgraph ROUTE[Tiếp nhận và định tuyến]
+        direction LR
+        A[App gửi yêu cầu] --> B[Coordinator kiểm tra dữ liệu<br/>và Idempotency-Key]
+        B --> C{Nguồn và đích<br/>cùng chi nhánh?}
+    end
+
+    subgraph LOCAL[Cùng chi nhánh]
+        direction LR
+        D[Chuyển yêu cầu đến node] --> E[Node ghi nợ và ghi có<br/>trong dữ liệu cục bộ]
+    end
+
+    subgraph PREPARE[Liên chi nhánh: Prepare]
+        direction LR
+        G[Tạo giao dịch phân tán] --> H[Gửi Prepare đến<br/>các participant]
+        H --> I{Tất cả participant<br/>trả YES?}
+    end
+
+    subgraph COMMIT[Nhánh Commit]
+        direction LR
+        J[Lưu quyết định COMMIT] --> K[Gửi Commit đến<br/>các node]
+        K --> L{Tất cả node xác nhận?}
+        L -->|Có| M[COMMITTED]
+        L -->|Chưa| N[COMMITTING / UNKNOWN]
+        N --> R[Recovery tiếp tục<br/>theo quyết định đã lưu]
+    end
+
+    subgraph ABORT[Nhánh Abort]
+        direction LR
+        O[Lưu quyết định ABORT] --> P[Gửi Abort và giải phóng<br/>reservation]
+        P --> Q[ABORTED hoặc ABORTING]
+    end
+
+    C -->|Có| D
+    C -->|Không| G
+    I -->|Có| J
+    I -->|Không| O
     E --> F[Trả kết quả về App]
-    C -->|Không| G[Tạo giao dịch phân tán]
-    G --> H[Pha 1: Prepare các participant]
-    H --> I{Tất cả participant<br/>trả YES?}
-    I -->|Có| J[Lưu quyết định COMMIT]
-    J --> K[Pha 2: gửi COMMIT đến các node]
-    K --> L{Tất cả node đã<br/>xác nhận COMMITTED?}
-    L -->|Có| M[Giao dịch COMMITTED]
-    L -->|Chưa| N[COMMITTING / UNKNOWN<br/>chờ recovery]
-    I -->|Không| O[Lưu quyết định ABORT]
-    O --> P[Gửi ABORT và giải phóng reservation]
-    P --> Q[ABORTED hoặc ABORTING<br/>nếu còn node chưa xác nhận]
     M --> F
-    N --> R[Recovery gửi lại lệnh<br/>theo quyết định đã lưu]
     R --> F
     Q --> F
 ```
